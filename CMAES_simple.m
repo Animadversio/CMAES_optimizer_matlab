@@ -39,9 +39,12 @@ classdef CMAES_simple < handle
     
     methods
         
-        function obj = CMAES_simple(codes,init_x)
-            
-            obj.codes = codes ; 
+        function obj = CMAES_simple(codes, init_x) 
+            % 2nd should be [] if we do not use init_x parameter. 
+            % if we want to tune this algorithm, we may need to send in a
+            % structure containing some initial parameters? like `sigma`
+            % object instantiation and parameter initialization 
+            obj.codes = codes; % not used..? Actually the codes are set in the first run
             obj.N = size(codes,2);
             
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
@@ -73,6 +76,11 @@ classdef CMAES_simple < handle
             obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
             
             % if init_x is set in TrialRecord, use it, it will become the first
+            if ~isempty(init_x)
+                obj.init_x = init_x;
+            else
+                obj.init_x = [];
+            end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used.
             
@@ -83,8 +91,7 @@ classdef CMAES_simple < handle
         end % of initialization
         
         
-        
-        function [new_samples, new_ids,TrialRecord] =  doScoring(obj,codes,scores,maximize,TrialRecord)
+        function [new_samples, new_ids, TrialRecord] =  doScoring(obj,codes,scores,maximize,TrialRecord)
             
             obj.codes = codes;
             
@@ -92,7 +99,7 @@ classdef CMAES_simple < handle
             if ~maximize
                 [sorted_score, code_sort_index] = sort(scores);  % add - operator it will do maximization.
             else
-                [sorted_score, code_sort_index] = sort(-scores);
+                [sorted_score, code_sort_index] = sort(scores, 'descend');
             end
             % TODO: maybe print the sorted score?
 %             disp(sorted_score)
@@ -104,13 +111,13 @@ classdef CMAES_simple < handle
                 % Population Initialization: if without initialization, the first obj.xmean is evaluated from weighted average all the natural images
                 if isempty(obj.init_x)
                     if obj.mu<=length(scores)
-                            obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
+                        obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
                     else % if ever the obj.mu (selected population size) larger than the initial population size (init_population is 1 ?)
                         tmpmu = max(floor(length(scores)/2), 1); % make sure at least one element!
                         obj.xmean = obj.weights(1:tmpmu) * obj.codes(code_sort_index(1:tmpmu), :) / sum(obj.weights(1:tmpmu));
                     end
                 else
-                    obj.xmean = init_x;
+                    obj.xmean = obj.init_x;
                 end
                 
                 
@@ -164,7 +171,7 @@ classdef CMAES_simple < handle
                 % ellipsoid by B mat linear transform between coordinates
                 new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
                
-                     % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
+                % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
                 % assign id to newly generated images. These will be used as file names at 2nd round
                 obj.counteval = obj.counteval + 1;
             end
