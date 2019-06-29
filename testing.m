@@ -10,9 +10,9 @@ UNIT_CIRC = [cos(theta'), sin(theta')];
 score_surf = scorefun([Xgrid(:), Ygrid(:)]);
 score_surf = reshape(score_surf, size(Xgrid));
 figure(1); clf;hold on 
-% contour(Xgrid, Ygrid, score_surf, 500) % value is too high to plot 
-contour(Xgrid, Ygrid, score_surf, 0:5:1000) % plot part of contours
-pause
+contour(Xgrid, Ygrid, score_surf, 500) % value is too high to plot 
+%contour(Xgrid, Ygrid, score_surf, 0:5:1000) % plot part of contours
+%pause
 %%
 codes = [4,2] + randn([4,2]);
 TrialRecord=struct();
