@@ -16,8 +16,11 @@ classdef CMAES_constraint < handle
         c1
         cs
         cc
+        c_cons % coefficient for constraint vector update
+        beta % control the speed of Cholesky factor 
         ps
         pc
+        cons_vec
         A
         Ainv
         Aupdate_freq = 10 ;
@@ -27,7 +30,8 @@ classdef CMAES_constraint < handle
         update_crit
         xmean
         init_x
-        
+        use_constraint
+        constraint
         %
         %     TrialRecord.User.population_size = [];
         %     TrialRecord.User.init_x =        [] ;
@@ -40,7 +44,8 @@ classdef CMAES_constraint < handle
     
     methods
         
-        function obj = CMAES_constraint(codes, init_x) 
+        function obj = CMAES_constraint(codes, init_x, constraint) 
+            % `Parameter`:
             % 2nd should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
@@ -50,12 +55,22 @@ classdef CMAES_constraint < handle
             
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
             % the relation between dimension and population size.
-            
+            if isempty(constraint) % fetch constraint information
+                obj.use_constraint = false;
+            else % initialize constraint related factors
+                obj.use_constraint = true;
+                assert(all(size(constraint) == [2,obj.N]), "Shape of constraint does not match that of code.");
+                assert(all(constraint(1, :) < constraint(2, :)), "Upper bound (2nd row) should be larger than lower bound (1st row). Use inf or -inf to denote unbounded");
+                obj.constraint = constraint;
+                obj.c_cons = 1/(obj.N + 2);
+                obj.beta = 0.1/(obj.N + 2);
+                obj.cons_vec = zeros(2*obj.N, obj.N);
+            end
             obj.randz = randn(obj.lambda, obj.N);  % Not Used.... initialize at the end of 1st generation
             obj.mu = obj.lambda / 2;  % number of parents/points for recombination
             
             %  Select half the population size as parents
-            obj.weights = log(obj.mu + 1/2) - log( 1:floor(obj.mu));  % muXone array for weighted recombination
+            obj.weights = log(obj.mu + 1/2) - log(1:floor(obj.mu));  % muXone array for weighted recombination
             obj.mu = floor(obj.mu);
             obj.weights = obj.weights / sum(obj.weights);  % normalize recombination weights array
             obj.mueff = sum(obj.weights).^ 2 / sum(obj.weights.^ 2);
@@ -83,10 +98,8 @@ classdef CMAES_constraint < handle
                 obj.init_x = [];
             end
             % xmean in 2nd generation
-            obj.xmean = zeros(1, obj.N); % Not used.
-            
-            obj.sigma = 3.0;
-            
+            obj.xmean = zeros(1, obj.N); % Not used. 
+            obj.sigma = 3.0; 
             obj.istep = -1;
             
         end % of initialization
@@ -123,12 +136,14 @@ classdef CMAES_constraint < handle
             else % if not first step
                 
                 fprintf('not first gen\n');
-%                 xold = obj.xmean;
+                % xold = obj.xmean;
                 % Weighted recombination, move the mean value
                 obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
                 
                 % Cumulation: Update evolution paths
                 randzw = obj.weights * obj.randz(code_sort_index(1:obj.mu), :); % Note, use the obj.randz saved from last generation
+                % Calculate the deviation vector in the isotropic hidden
+                % space. 
                 obj.ps = (1 - obj.cs) * obj.ps + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * randzw;
                 obj.pc = (1 - obj.cc) * obj.pc + sqrt(obj.cc * (2 - obj.cc) * obj.mueff) * randzw * obj.A;
                 
@@ -139,7 +154,7 @@ classdef CMAES_constraint < handle
                 %         sigma = sigma + sigma.*0.10 ;
                 %     end
                 %     if obj.istep > 5
-                % %     if all(~diff(TrialRecord.User.respOverGen(end-4:end))), sigma = 3 ; end
+                %       if all(~diff(TrialRecord.User.respOverGen(end-4:end))), sigma = 3 ; end
                 %     end
                 
                 fprintf("Step %d, sigma: %0.2e, Scores\n",obj.istep, obj.sigma)
@@ -160,19 +175,52 @@ classdef CMAES_constraint < handle
             % Generate new sample by sampling from Multivar Gaussian distribution
             new_samples = zeros(obj.lambda, obj.N);
             new_ids = [];
-            obj.randz = randn(obj.lambda, obj.N);  % save the random number for generating the code.
-            % For optimization path update in the next generation.
-            
-            for k = 1:obj.lambda
-                new_samples(k, :) = obj.xmean + obj.sigma * (obj.randz(k, :) * obj.A);  % m + sig * Normal(0,C)
-                % Clever way to generate multivariate gaussian!!
-                % Stretch the guassian hyperspher with D and transform the
-                % ellipsoid by B mat linear transform between coordinates
-                new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
-               
-                % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
-                % assign id to newly generated images. These will be used as file names at 2nd round
-                obj.counteval = obj.counteval + 1;
+            out_of_bnd_samp = [];
+            TrialRecord.User.out_of_bnd_sample = [];
+            if ~obj.use_constraint
+                obj.randz = randn(obj.lambda, obj.N);  % save the random number for generating the code.
+                % For optimization path update in the next generation.
+                for k = 1:obj.lambda
+                    new_samples(k, :) = obj.xmean + obj.sigma * (obj.randz(k, :) * obj.A);  % m + sig * Normal(0,C)
+                    % Clever way to generate multivariate gaussian!!
+                    % Stretch the guassian hyperspher with D and transform the
+                    % ellipsoid by B mat linear transform between coordinates
+                    new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
+
+                    % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
+                    % assign id to newly generated images. These will be used as file names at 2nd round
+                    obj.counteval = obj.counteval + 1;
+                end
+            else
+                obj.randz = [];
+                for k = 1:obj.lambda
+                    infeasible = true;
+                    while infeasible
+                        rand_vec = randn(1,obj.N);
+                        transf_vec = rand_vec * obj.A;
+                        new_samples(k, :) = obj.xmean + obj.sigma * transf_vec;  % m + sig * Normal(0,C)
+                        if all(new_samples(k, :) < obj.constraint(2, :)) && all(new_samples(k, :) > obj.constraint(1, :))
+                            obj.randz = [obj.randz; rand_vec];
+                            break;
+                        else
+                            out_of_bnd_samp = [out_of_bnd_samp; new_samples(k, :)];
+                            UB_break_id = find(new_samples(k, :) > obj.constraint(2, :));
+                            LB_break_id = find(new_samples(k, :) < obj.constraint(1, :));
+                            break_id = [LB_break_id, obj.N + UB_break_id];
+                            update_break_vec = (1- obj.c_cons) * obj.cons_vec(break_id, :) + obj.c_cons * transf_vec;
+                            cons_w = update_break_vec * obj.Ainv;
+                            weight_fact = sum(cons_w.^2, 2);
+                            obj.A = obj.A - obj.beta / length(break_id) * update_break_vec' * (1./weight_fact) .* cons_w;
+                            obj.cons_vec(break_id, :) = update_break_vec;
+                        end
+                    end
+                    new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
+                    % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
+                    % assign id to newly generated images. These will be used as file names at 2nd round
+                    obj.counteval = obj.counteval + 1;
+                end
+                fprintf("Resampled # %d out of boundary points!\n", size(out_of_bnd_samp,1))
+                TrialRecord.User.out_of_bnd_sample = out_of_bnd_samp;
             end
             new_ids = cellstr(new_ids); % Important to save the cell format string array!
             
