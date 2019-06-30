@@ -99,7 +99,7 @@ classdef CMAES_constraint < handle
             end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used. 
-            obj.sigma = 3.0; 
+            obj.sigma = 0.2; 
             obj.istep = -1;
             
         end % of initialization
@@ -116,7 +116,7 @@ classdef CMAES_constraint < handle
                 [sorted_score, code_sort_index] = sort(scores, 'descend');
             end
             % TODO: maybe print the sorted score?
-            disp(sorted_score')
+            disp(sorted_score)
             
             if obj.istep == -1 % if first step
                 fprintf('is first gen\n');
@@ -210,7 +210,7 @@ classdef CMAES_constraint < handle
                             update_break_vec = (1- obj.c_cons) * obj.cons_vec(break_id, :) + obj.c_cons * transf_vec;
                             cons_w = update_break_vec * obj.Ainv;
                             weight_fact = sum(cons_w.^2, 2);
-                            obj.A = obj.A - obj.beta / length(break_id) * update_break_vec' * (1./weight_fact) .* cons_w;
+                            obj.A = obj.A - obj.beta / length(break_id) * update_break_vec' * ((1./weight_fact) .* cons_w);
                             obj.cons_vec(break_id, :) = update_break_vec;
                         end
                     end
