@@ -80,7 +80,7 @@ classdef CMAES_Sphere < handle
             end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used. 
-            obj.sigma = 0.2; 
+            obj.sigma = 0.5; 
             obj.istep = -1;
             
         end % of initialization
@@ -92,7 +92,7 @@ classdef CMAES_Sphere < handle
             
             % Sort by fitness and compute weighted mean into xmean
             if ~maximize
-                [sorted_score, code_sort_index] = sort(scores);  % add - operator it will do maximization.
+                [sorted_score, code_sort_index] = sort(scores);  
             else
                 [sorted_score, code_sort_index] = sort(scores, 'descend');
             end
@@ -122,36 +122,52 @@ classdef CMAES_Sphere < handle
                 fprintf('not first gen\n');
                 xold = obj.xmean;
                 % Weighted recombination, move the mean value
-                mean_tangent = obj.weights * obj.tang_codes(code_sort_index(1:obj.mu), :);
-                obj.xmean = ExpMap(obj.xmean, mean_tangent); % Map the mean tangent onto sphere
-                
+                % mean_tangent = obj.weights * obj.tang_codes(code_sort_index(1:obj.mu), :);
+                % obj.xmean = ExpMap(obj.xmean, mean_tangent); % Map the mean tangent onto sphere
+                % Do spherical mean in embedding space, not in tangent
+                % vector space! 
+                obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
+                obj.xmean = obj.xmean / norm(obj.xmean); % Spherical Mean
+                [vtan_old, vtan_new] = InvExpMap(xold, obj.xmean);
+                uni_vtan_old = vtan_old / norm(vtan_old);
+                uni_vtan_new = vtan_new / norm(vtan_new);
+                ps_transp = VecTransport(xold, obj.xmean, obj.ps);
+                pc_transp = VecTransport(xold, obj.xmean, obj.pc);
                 % Cumulation: Update evolution paths
                 % In the sphereical case we have to transport the vector to
                 % the new center
                 % FIXME, pc explode problem???? 
-                randzw = obj.weights * obj.randz(code_sort_index(1:obj.mu), :); % Note, use the obj.randz saved from last generation
-                obj.ps = (1 - obj.cs) * obj.ps + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * randzw; 
-                obj.pc = (1 - obj.cc) * obj.pc + sqrt(obj.cc * (2 - obj.cc) * obj.mueff) * randzw * obj.A;
+                
+                obj.pc = (1 - obj.cc) * pc_transp + sqrt(obj.cc * (2 - obj.cc) * obj.mueff) * vtan_new / obj.sigma; % do the update in the space
+                % Transport the A and Ainv to the new spot 
+                obj.A = obj.A + obj.A * uni_vtan_old' * (uni_vtan_new - uni_vtan_old) + obj.A * xold' * (obj.xmean - xold); 
+                obj.Ainv = obj.Ainv + (uni_vtan_new - uni_vtan_old)' * uni_vtan_old * obj.Ainv + (obj.xmean - xold)' * xold * obj.Ainv; 
+                % Use the new Ainv to transform ps 
+                obj.ps = (1 - obj.cs) * ps_transp + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * vtan_new * obj.Ainv / obj.sigma; 
+
+                % randzw = obj.weights * obj.randz(code_sort_index(1:obj.mu), :); % Note, use the obj.randz saved from last generation
+                % obj.ps = (1 - obj.cs) * obj.ps + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * randzw; 
+                % obj.pc = (1 - obj.cc) * obj.pc + sqrt(obj.cc * (2 - obj.cc) * obj.mueff) * randzw * obj.A;
                 
                 % Adapt step size sigma. 
                 % Decide whether to grow sigma or shrink sigma by comparing
                 % the cumulated path length norm(ps) with expectation
                 % obj.chiN
-                obj.sigma =  obj.sigma * exp((obj.cs / obj.damps) * (norm(obj.ps) / obj.chiN - 1));
+                obj.sigma =  obj.sigma * exp((obj.cs / obj.damps) * (norm(real(obj.ps)) / obj.chiN - 1));
                 
                 fprintf("Step %d, sigma: %0.2e, Scores\n",obj.istep, obj.sigma)
-                
+                % disp(obj.A * obj.Ainv)
                 % Update the A and Ainv mapping
                 if obj.counteval - obj.eigeneval > obj.update_crit  % to achieve O(N ^ 2)
                     obj.eigeneval = obj.counteval;
                     tic;
                     v = obj.pc * obj.Ainv;
                     normv = v * v';
-                    obj.A = sqrt(1-obj.c1) * obj.A + sqrt(1-obj.c1)/normv*(sqrt(1+normv*obj.c1/(1-obj.c1))-1) * v * obj.pc';
-                    obj.Ainv = 1/sqrt(1-obj.c1) * obj.Ainv - 1/sqrt(1-obj.c1)/normv*(1-1/sqrt(1+normv*obj.c1/(1-obj.c1))) * obj.Ainv* (v'*v);
+                    obj.A = sqrt(1-obj.c1) * obj.A + sqrt(1-obj.c1)/normv*(sqrt(1+normv*obj.c1/(1-obj.c1))-1) * v' * obj.pc; %FIXED! dimension error
+                    obj.Ainv = 1/sqrt(1-obj.c1) * obj.Ainv - 1/sqrt(1-obj.c1)/normv*(1-1/sqrt(1+normv*obj.c1/(1-obj.c1))) * obj.Ainv*v'*v;
                     fprintf("obj.A, obj.Ainv update! Time cost: %.2f s\n", toc)
                 end
-                
+                % disp(obj.A * obj.Ainv)
             end % of first step
             
             % Generate new sample by sampling from Multivar Gaussian distribution
@@ -159,8 +175,8 @@ classdef CMAES_Sphere < handle
             new_ids = [];
             obj.randz = randn(obj.lambda, obj.N);  % save the random number for generating the code.
             % For optimization path update in the next generation.
-            proj_vec = obj.xmean * obj.Ainv;  % project the xmean vector to the kernel space
-            obj.randz = obj.randz - (obj.randz * proj_vec') * proj_vec; % orthogonalize to current vector
+            % proj_vec  = obj.xmean * obj.Ainv;  % project the xmean vector to the kernel space
+            % obj.randz = obj.randz - (obj.randz * proj_vec') * proj_vec; % orthogonalize to current vector
             
             for k = 1:obj.lambda
                 obj.tang_codes(k, :) = obj.sigma * (obj.randz(k, :) * obj.A);  % sig * Normal(0,C) 
@@ -192,8 +208,26 @@ function y = ExpMap(x, tang_vec)
     EPS = 1E-3;
     assert(abs(norm(x)-1) < EPS);
     assert(sum(x * tang_vec') < EPS);
-    angle_dist = sqrt(sum(tang_vec.^2, 2));
+    angle_dist = sqrt(sum(tang_vec.^2, 2)); % vectorized
     uni_tang_vec = tang_vec ./ angle_dist;
-    x = repmat(x, size(tang_vec, 1), 1);
+    x = repmat(x, size(tang_vec, 1), 1); % vectorized
     y = cos(angle_dist) .* x + sin(angle_dist) .* uni_tang_vec;
 end
+
+function [vtang_old, vtang_new] = InvExpMap(xold, xnew)
+    xold = xold ./ norm(xold);
+    xnew = xnew ./ norm(xnew);
+    angle = acos(dot(xold, xnew)); % 0-pi angle distance between old and new position. 
+    vtang_old = xnew - cos(angle) * xold; 
+    vtang_old = vtang_old / norm(vtang_old) * angle;
+    vtang_new = - xold + cos(angle) * xnew; 
+    vtang_new = vtang_new / norm(vtang_new) * angle; % output tangent vector with norm of angle
+end
+
+function v_transport = VecTransport(xold, xnew, v)
+    xold = xold ./ norm(xold);
+    xnew = xnew ./ norm(xnew);
+    x_symm_axis = xold + xnew;
+    v_transport = v - 2 * dot(v, x_symm_axis)/norm(x_symm_axis)^2 * x_symm_axis; % Equation for vector parallel transport along geodesic
+end
+
