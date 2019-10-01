@@ -1,4 +1,4 @@
-classdef CMAES_Sphere < handle
+classdef CMAES_Sphere_Tang < handle
     % Implement the CMA_ES that explore in sphere instead of in linear
     % space
     properties
@@ -35,7 +35,7 @@ classdef CMAES_Sphere < handle
     
     methods
         
-        function obj = CMAES_Sphere(codes, init_x) 
+        function obj = CMAES_Sphere_Tang(codes, init_x) 
             % 2nd should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
@@ -80,7 +80,7 @@ classdef CMAES_Sphere < handle
             end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used. 
-            obj.sigma = 0.2; 
+            obj.sigma = 0.4; 
             obj.istep = -1;
             
         end % of initialization
@@ -126,9 +126,15 @@ classdef CMAES_Sphere < handle
                 % obj.xmean = ExpMap(obj.xmean, mean_tangent); % Map the mean tangent onto sphere
                 % Do spherical mean in embedding space, not in tangent
                 % vector space! 
-                obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
-                obj.xmean = obj.xmean / norm(obj.xmean); % Spherical Mean
-                [vtan_old, vtan_new] = InvExpMap(xold, obj.xmean); % Tangent vector of the arc between old and new mean
+%                 obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
+%                 obj.xmean = obj.xmean / norm(obj.xmean); % Spherical Mean
+                % [vtan_old, vtan_new] = InvExpMap(xold, obj.xmean); % Tangent vector of the arc between old and new mean
+                
+                vtan_old = obj.weights * obj.tang_codes(code_sort_index(1:obj.mu), :); % mean in Tangent Space
+                obj.xmean = ExpMap(xold, vtan_old); % Project to new tangent space
+                
+                disp(norm(vtan_old))
+                vtan_new = VecTransport(xold, obj.xmean , vtan_old); % Transport this vector to new spot
                 uni_vtan_old = vtan_old / norm(vtan_old);
                 uni_vtan_new = vtan_new / norm(vtan_new); % uniform the tangent vector
                 ps_transp = VecTransport(xold, obj.xmean, obj.ps); % transport the path vector from old to new mean
@@ -143,7 +149,7 @@ classdef CMAES_Sphere < handle
                 obj.A = obj.A + obj.A * uni_vtan_old' * (uni_vtan_new - uni_vtan_old) + obj.A * xold' * (obj.xmean - xold);  % transport the A mapping from old to new mean
                 obj.Ainv = obj.Ainv + (uni_vtan_new - uni_vtan_old)' * uni_vtan_old * obj.Ainv + (obj.xmean - xold)' * xold * obj.Ainv; 
                 % Use the new Ainv to transform ps 
-                obj.ps = (1 - obj.cs) * ps_transp + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * vtan_new * obj.Ainv ; % / obj.sigma
+                obj.ps = (1 - obj.cs) * ps_transp + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * vtan_new * obj.Ainv / obj.sigma; 
 
                 % randzw = obj.weights * obj.randz(code_sort_index(1:obj.mu), :); % Note, use the obj.randz saved from last generation
                 % obj.ps = (1 - obj.cs) * obj.ps + sqrt(obj.cs * (2 - obj.cs) * obj.mueff) * randzw; 
@@ -153,8 +159,8 @@ classdef CMAES_Sphere < handle
                 % Decide whether to grow sigma or shrink sigma by comparing
                 % the cumulated path length norm(ps) with expectation
                 % obj.chiN
-                obj.chiN = RW_Step_Size_Sphere(obj.lambda, obj.sigma, obj.N);
-                obj.sigma =  min(obj.MAXSGM, obj.sigma * exp((obj.cs / obj.damps) * (norm(real(obj.ps)) / obj.chiN - 1)));
+                % obj.chiN = RW_Step_Size_Sphere(obj.lambda, obj.sigma, obj.N);
+                obj.sigma =  min(obj.MAXSGM, obj.sigma * exp((obj.cs / obj.damps) * (norm(real(obj.ps)) * sqrt(obj.N) / obj.chiN - 1)));
                 if obj.sigma == obj.MAXSGM
                     disp("Reach upper limit for sigma! ")
                 end
@@ -167,7 +173,7 @@ classdef CMAES_Sphere < handle
                     v = obj.pc * obj.Ainv;
                     normv = v * v';
                     obj.A = sqrt(1-obj.c1) * obj.A + sqrt(1-obj.c1)/normv*(sqrt(1+normv*obj.c1/(1-obj.c1))-1) * v' * obj.pc; %FIXED! dimension error
-                    obj.Ainv = 1/sqrt(1-obj.c1) * obj.Ainv - 1/sqrt(1-obj.c1)/normv*(1-1/sqrt(1+normv*obj.c1/(1-obj.c1))) * obj.Ainv * v'*v;
+                    obj.Ainv = 1/sqrt(1-obj.c1) * obj.Ainv - 1/sqrt(1-obj.c1)/normv*(1-1/sqrt(1+normv*obj.c1/(1-obj.c1))) * obj.Ainv * (v'*v);
                     fprintf("obj.A, obj.Ainv update! Time cost: %.2f s\n", toc)
                 end
                 disp(norm(eye(obj.N) - obj.A * obj.Ainv)) % Deviation from being inverse to each other 
@@ -180,13 +186,13 @@ classdef CMAES_Sphere < handle
             % For optimization path update in the next generation.
             % proj_vec  = obj.xmean * obj.Ainv;  % project the xmean vector to the kernel space
             % obj.randz = obj.randz - (obj.randz * proj_vec') * proj_vec; % orthogonalize to current vector
-            
+            obj.tang_codes = obj.sigma * (obj.randz(:, :) * obj.A) / sqrt(obj.N);  % sig * Normal(0,C) 
+            obj.tang_codes = obj.tang_codes - (obj.tang_codes * obj.xmean') * obj.xmean;
+            % FIXME, wrap back problem 
+            % Clever way to generate multivariate gaussian!!
+            new_samples = ExpMap(obj.xmean, obj.tang_codes); 
             for k = 1:obj.lambda
-                obj.tang_codes(k, :) = obj.sigma * (obj.randz(k, :) * obj.A);  % sig * Normal(0,C) 
-                obj.tang_codes(k, :) = obj.tang_codes(k, :) - obj.xmean * (obj.tang_codes(k, :) * obj.xmean');
-                % FIXME, wrap back problem 
-                % Clever way to generate multivariate gaussian!!
-                new_samples(k, :) = ExpMap(obj.xmean, obj.tang_codes(k, :)); 
+                
                 % Exponential map the tang vector from center to the sphere 
                 new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
                
@@ -210,7 +216,7 @@ end % of classdef
 function y = ExpMap(x, tang_vec)
     EPS = 1E-3;
     assert(abs(norm(x)-1) < EPS);
-    assert(sum(x * tang_vec') < EPS);
+    assert(mean(x * tang_vec') < EPS);
     angle_dist = sqrt(sum(tang_vec.^2, 2)); % vectorized
     uni_tang_vec = tang_vec ./ angle_dist;
     x = repmat(x, size(tang_vec, 1), 1); % vectorized
