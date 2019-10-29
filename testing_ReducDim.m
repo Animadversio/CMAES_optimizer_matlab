@@ -17,14 +17,14 @@ contour(Xgrid, Ygrid, score_surf, 500) % value is too high to plot
 codes = [2,3] + randn([4,2]);
 TrialRecord=struct();
 init_x = [];
-optimizer = CMAES_ReducDim(codes, [], 2);
+optimizer = CMAES_ReducDim(codes, [], 1);
 basis = optimizer.getBasis('rand');%[1 0;0 1]
 figure(1);hold on;axis equal
 for i=1:100
     scores = scorefun(codes);
-    red_codes = codes * basis';
-    [new_red_codes, new_ids, TrialRecord] = optimizer.doScoring(red_codes, scores, MAXIMIZE, TrialRecord);
-    new_codes = new_red_codes * basis;
+    %red_codes = codes * basis';
+    [new_codes, new_ids, TrialRecord] = optimizer.doScoring(codes, scores, MAXIMIZE, TrialRecord);
+    %new_codes = new_red_codes * basis;
     disp('Center of Distribution')
     disp(optimizer.xmean * basis)
     %disp(sort(scores'))
@@ -40,18 +40,18 @@ TrialRecord=struct();
 init_x = [];
 optimizer = CMAES_simple(codes, []);
 basis = eye(4);
-optimizer = CMAES_ReducDim(codes, [], 2);
+optimizer = CMAES_ReducDim(codes, [], 3);
 basis = optimizer.getBasis('rand');%'rand'
 %figure(1);hold on;axis equal
 for i=1:500
     scores = scorefun(codes);
-    if i == 1
-        red_codes = codes * basis';
-    else
-        red_codes = new_red_codes; % coordinate transform to subspace
-    end
-    [new_red_codes, new_ids, TrialRecord] = optimizer.doScoring(red_codes, scores, MAXIMIZE, TrialRecord);
-    new_codes = new_red_codes * basis; % coordinate transform to outer space
+%     if i == 1
+%         red_codes = codes * basis';
+%     else
+%         red_codes = new_red_codes; % coordinate transform to subspace
+%     end
+    [new_codes, new_ids, TrialRecord] = optimizer.doScoring(codes, scores, MAXIMIZE, TrialRecord);
+%     new_codes = new_red_codes * basis; % coordinate transform to outer space
     disp('Center of Distribution')
     disp(optimizer.xmean * basis)
     %disp(sort(scores'))

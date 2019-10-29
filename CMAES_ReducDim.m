@@ -136,7 +136,7 @@ classdef CMAES_ReducDim < handle
         
         function [new_samples, new_ids, TrialRecord] =  doScoring(obj,codes,scores,maximize,TrialRecord)
             
-            obj.codes = codes;
+            obj.codes = codes * obj.basis';
             
             % Sort by fitness and compute weighted mean into xmean
             if ~maximize
@@ -217,7 +217,7 @@ classdef CMAES_ReducDim < handle
                 obj.counteval = obj.counteval + 1;
             end
             new_ids = cellstr(new_ids); % Important to save the cell format string array!
-            
+            new_samples = new_samples * obj.basis; 
             % self.sigma, self.obj.A, self.obj.Ainv, self.obj.obj.ps, self.obj.pc = sigma, obj.A, obj.Ainv, obj.obj.ps, obj.pc,
             obj.istep = obj.istep + 1;
 %             fprintf('step is now %d\n',obj.istep);
