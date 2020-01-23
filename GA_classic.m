@@ -1,4 +1,4 @@
-classdef Genetic_Classic < handle
+classdef GA_classic < handle
     
     properties
         codes
@@ -30,7 +30,7 @@ classdef Genetic_Classic < handle
     
     methods
         
-        function obj = Genetic_Classic(init_codes, init_ids) 
+        function obj = GA_classic(init_codes, init_ids) 
             % 2nd arg should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
@@ -53,7 +53,7 @@ classdef Genetic_Classic < handle
         end % of initialization
         
         function [new_samples, new_ids, TrialRecord] =  doScoring(self,codes,scores,maximize,TrialRecord)
-            assert(length(scores) == length(codes), ...
+            assert(length(scores) == size(codes,1), ...
                 sprintf('number of scores (%d) != population size (%d)', length(scores), size(codes,1)));
             new_size = self.popsize;  % this may != len(curr_samples) if it has been dynamically updated
             % instead of chaining the genealogy, alias it at every step

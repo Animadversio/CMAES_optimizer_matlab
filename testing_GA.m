@@ -17,7 +17,7 @@ contour(Xgrid, Ygrid, score_surf, 500) % value is too high to plot
 codes = [4,2] + randn([12,2]);
 TrialRecord=struct();
 init_x = [];
-optimizer = Genetic_Classic(codes, []);
+optimizer = GA_classic(codes, []);
 figure(1);hold on;axis equal
 for i=1:100
     scores = scorefun(codes);
