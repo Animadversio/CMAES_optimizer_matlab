@@ -31,7 +31,7 @@ for i=1:100
     pause
     codes = new_codes;
 end
-
+%%
 
 %%
 % function f = scorefun(x)
