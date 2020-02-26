@@ -4,7 +4,7 @@
 net = alexnet;
 pic_size = net.Layers(1).InputSize;
 % declare your generator
-GANpath = ""
+GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
 addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat') ;
 my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_RedDim';
@@ -12,14 +12,14 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 % declare your number of generations
 n_gen = 100 ;
 % unit = {"fc8", 2}
-unit = {"conv2", 10, 100}
+unit = {"conv2", 10, 100};
 genes = normrnd(0,1,30,4096);
 Optimizer =  CMAES_simple(genes, []);
-Optimizer = CMAES_ReducDim(genes, [], 50);
-Optimizer.getBasis("rand")
+% Optimizer = CMAES_ReducDim(genes, [], 50);
+% Optimizer.getBasis("rand")
 
-Visualize = true
-Save = true
+Visualize = true;
+Save = true;
 % all_layers_wanted = {'conv4','conv5','conv3','conv2','conv1'};
 % n_unitsInChan = 10 ;
 % % select random units
@@ -42,7 +42,7 @@ end
 act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
 [nrows,ncols,nchans] = size(act1) ;
 [i,j] = ind2sub( [nrows ncols], t_unit ) ;
-%%    evolutions
+%    evolutions
 % define random set of input vectors (samples from a gaussian, 0, -1)
 % 30 x 4096
 codes_all = [];
@@ -58,9 +58,9 @@ for iGen = 1:n_gen
     act1 = activations(net,pics,my_layer,'OutputAs','Channels');
     act_unit = squeeze( act1(i,j,iChan,:) ) ;
     % Record info 
-    scores_all = [scores_all, act_unit]; 
+    scores_all = [scores_all; act_unit]; 
     codes_all = [codes_all; genes];
-    generations = [generations, iGen * ones(1, length(act_unit))];
+    generations = [generations; iGen * ones(length(act_unit), 1)];
     % pass that unit's activations into CMAES_simple
     % save the new codes as 'genes'
     [genes,tids] = Optimizer.doScoring(genes, act_unit, true);
@@ -83,6 +83,9 @@ for iGen = 1:n_gen
         fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name ) , 'jpg')
     end
 end % of iGen
+norm_all = sqrt(sum(codes_all.^2,2));
+norm_all(end-10:end)
 %%
-save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name(1:end-4)) ,'mean_activation')
+save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit)), "scores_all","codes_all","generations")
+%save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name(1:end-4)) ,'mean_activation')
 
