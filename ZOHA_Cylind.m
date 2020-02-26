@@ -1,4 +1,4 @@
-classdef Optimizer_Cylindrical < handle
+classdef ZOHA_Cylind < handle
 	properties
 		dimen # = space_dimen  # dimension of input space
         B  # = population_size  # population batch size
@@ -37,10 +37,12 @@ classdef Optimizer_Cylindrical < handle
     end
 
    	methods
-   		function obj = Optimizer_Cylindrical(space_dimen, population_size=40, lr_norm=0.5, mu_norm=5, lr_sph=2, mu_sph=0.005,
+   		function obj = ZOHA_Cylind(space_dimen, population_size=40, lr_norm=0.5, mu_norm=5, lr_sph=2, mu_sph=0.005,
             Lambda=1, Hupdate_freq=5, maximize=True, max_norm=300, rankweight=False, nat_grad=False)
 
    		end % of initialization
 
 
    		function [new_samples] =  doScoring(obj,codes,scores)
+
+        end
