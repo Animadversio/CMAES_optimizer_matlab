@@ -1,4 +1,5 @@
 function y = ExpMap(x, tang_vec)
+	% Modified Feb. 25th to allow x of arbitrary norm.
     EPS = 1E-3;
     assert(abs(norm(x)-1) < EPS);
     assert(sum(x * tang_vec') < EPS);
