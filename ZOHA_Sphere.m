@@ -49,12 +49,6 @@ classdef ZOHA_Sphere < handle
             self.HessD  = zeros(self.HB, 1);  % diagonal values of the Lambda matrix
             self.HessV  = zeros(self.HB, self.HB);  % seems not used....
             self.HUDiag = zeros(self.HB, 1);
-        
-            fprintf("Spereical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f\n Learning rate: %.3f\n",...
-               self.dimen, self.B, self.mu, self.lr)
-            if self.rankweight
-            	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
-            end
    		end % of initialization
         
         function parseParameters(self, opts)
@@ -77,6 +71,25 @@ classdef ZOHA_Sphere < handle
             self.maximize = opts.maximize;  % maximize / minimize the function
             self.rankweight = opts.rankweight; % Switch between using raw score as weight VS use rank weight as score
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
+            fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f\n Learning rate: %.3f\n",...
+               self.dimen, self.B, self.mu, self.lr)
+            if self.rankweight
+            	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
+            end
+            % parameter checking 
+            ExpectExplAng = (sqrt(self.dimen) * self.mu) / pi * 180;
+            fprintf("Expected angular exploration length %.1f deg\n",ExpectExplAng)
+            if ExpectExplAng > 90
+                warning("Estimated exploration range too large! Destined to fail! Check parameters!\n")
+            end
+            if self.rankweight
+                weights = rankweight(self.B, self.select_cutoff);
+                ExpectStepSize = sqrt(self.dimen * sum(weights.^2)) * self.mu * self.lr / pi * 180;
+                fprintf("Estimated angular step size %.1f deg\n", ExpectStepSize)
+                if ExpectStepSize > 90 
+                warning("Estimated step size too large! Destined to fail! Check parameters!\n")
+            end
+            end
         end
         
    		function [new_samples, new_ids] =  doScoring(self,codes,scores, maximize, TrialRecord)
