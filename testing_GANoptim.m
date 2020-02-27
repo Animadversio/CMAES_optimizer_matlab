@@ -7,17 +7,20 @@ pic_size = net.Layers(1).InputSize;
 GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
 addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat') ;
-my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_RedDim';
+my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
 %%
 % declare your number of generations
 n_gen = 100 ;
 % unit = {"fc8", 2}
 unit = {"conv2", 10, 100};
-genes = normrnd(0,1,30,4096);
-Optimizer =  CMAES_simple(genes, []);
+options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, "Hupdate_freq",201,...
+        	"maximize",true, "max_norm",300, "rankweight",true, "nat_grad",false);
+Optimizer = ZOHA_Sphere(4096, options);
+% Optimizer =  CMAES_simple(genes, []);
 % Optimizer = CMAES_ReducDim(genes, [], 50);
 % Optimizer.getBasis("rand")
-
+genes = normrnd(0,1,30,4096);
+genes = [zeros(1,4096) ; genes];
 Visualize = true;
 Save = true;
 % all_layers_wanted = {'conv4','conv5','conv3','conv2','conv1'};
@@ -34,7 +37,6 @@ if contains(my_layer,"fc")
 else
 	t_unit = unit{3};
 end
-
 if ~exist(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit) ),'dir')
     mkdir(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit) ))
 end
