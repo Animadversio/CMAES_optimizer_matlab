@@ -66,6 +66,7 @@ classdef ZOHA_Sphere < handle
     		if ~isfield(opts, "Lambda"), opts.Lambda = 1; end
     		if ~isfield(opts, "maximize"), opts.maximize = true; end
     		if ~isfield(opts, "rankweight"), opts.rankweight = true; end
+            if ~isfield(opts, "rankbasis"), opts.rankbasis = true; end
     		if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 201; end
             self.B = opts.population_size;  % population batch size
             self.select_cutoff = floor(opts.select_cutoff);
@@ -76,6 +77,7 @@ classdef ZOHA_Sphere < handle
             assert(self.Lambda > 0)
             self.maximize = opts.maximize;  % maximize / minimize the function
             self.rankweight = opts.rankweight; % Switch between using raw score as weight VS use rank weight as score
+            self.rankbasis = pts.rankbasis; % whether include basis in the ranking comparison.
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
         end
         
