@@ -118,15 +118,24 @@ classdef ZOHA_Sphere < handle
                 % B normalizer should go here larger cohort of codes gives more estimates 
                 weights = (scores(2:end) - scores(1)) / self.B; % / self.mu 
             else  % use a function of rank as weight, not really gradient. 
-                if self.maximize == false % note for weighted recombination, the maximization flag is here. 
-                    [~,code_rank]=ismember(scores(2:end), sort(scores(2:end),'ascend')); % find rank of ascending order
+                
+                if ~ self.rankbasis % if false, then exclude the first basis vector from rank (thus it receive no weights.)
+                    rankedscore = scores(2:end);
                 else
-                    [~,code_rank]=ismember(scores(2:end), sort(scores(2:end),'descend')); % find rank of descending order 
+                    rankedscore = scores;
                 end
-                % Consider do we need to consider the basis code and score here? Or no? 
+                if self.maximize == false % note for weighted recombination, the maximization flag is here. 
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'ascend')); % find rank of ascending order
+                else
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'descend')); % find rank of descending order 
+                end
                 % Note the weights here are internally normalized s.t. sum up to 1, no need to normalize more. 
                 raw_weights = rankweight(length(code_rank)); 
                 weights = raw_weights(code_rank); % map the rank to the corresponding weight of recombination
+                % Consider do we need to consider the basis code and score here? Or no? 
+                if self.rankbasis
+                    weights = weights(2:end); % the weight of the basis vector will do nothing! as the deviation will be nothing
+                end
             end
             % estimate gradient from the codes and scores
             % assume self.weights is a row vector 
