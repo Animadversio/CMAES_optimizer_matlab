@@ -23,4 +23,13 @@ f_exp = score_fun(basis_vec + tang_codes);
 hagrad = weights * tang_codes(sort_arg, :);
 gradnorm(i) = norm(hagrad);
 end
-figure, hist(gradnorm)
+figure(1), clf, hist(gradnorm)
+
+%%
+mu = 0.5;
+basis_vec = zeros(1, dimen);
+basis_vec(1) = basis_norm; 
+tang_codes = mu * randn(4000, dimen);
+new_codes = basis_vec+tang_codes;
+newnorms = sqrt(sum(new_codes.^2,2));
+figure(2), clf, hist(newnorms)
