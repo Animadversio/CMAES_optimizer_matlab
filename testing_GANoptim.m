@@ -15,7 +15,7 @@ unit = {"fc8", 2};
 % unit = {"conv2", 10, 100};
 
 % options = struct("population_size",40, "select_cutoff",10, "lr",2.5, "mu",0.005, "Lambda",1, ...
-%         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "nat_grad",false);
+%         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", true, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
 Optimizer =  CMAES_simple(genes, []);
 % Optimizer = CMAES_ReducDim(genes, [], 50);
@@ -122,7 +122,6 @@ for iGen = 1:n_gen
     end
 end % of iGen
 norm_all = sqrt(sum(codes_all.^2,2));
-norm_all(end-10:end);
 %%
 save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit)), "scores_all","codes_all","generations")
 %save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name(1:end-4)) ,'mean_activation')

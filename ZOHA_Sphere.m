@@ -132,7 +132,7 @@ classdef ZOHA_Sphere < handle
                 % Note the weights here are internally normalized s.t. sum up to 1, no need to normalize more. 
                 raw_weights = rankweight(length(code_rank)); 
                 weights = raw_weights(code_rank); % map the rank to the corresponding weight of recombination
-                % Consider do we need to consider the basis code and score here? Or no? 
+                % Consider the basis in our rank! but the weight will be wasted as we don't use it. 
                 if self.rankbasis
                     weights = weights(2:end); % the weight of the basis vector will do nothing! as the deviation will be nothing
                 end
@@ -169,7 +169,6 @@ classdef ZOHA_Sphere < handle
             self.counteval = self.counteval + 1;
         end
         self.istep = self.istep + 1;
-        % new_samples = new_samples / norm(new_samples, axis=1)[:, np.newaxis] * self.sphere_norm; 
         new_samples = renormalize(new_samples, self.sphere_norm);
         end
     end
