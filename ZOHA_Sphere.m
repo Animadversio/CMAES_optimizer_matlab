@@ -60,6 +60,7 @@ classdef ZOHA_Sphere < handle
     		if ~isfield(opts, "Lambda"), opts.Lambda = 1; end
     		if ~isfield(opts, "maximize"), opts.maximize = true; end
     		if ~isfield(opts, "rankweight"), opts.rankweight = true; end
+            if ~isfield(opts, "rankbasis"), opts.rankbasis = true; end
     		if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 201; end
             self.B = opts.population_size;  % population batch size
             self.select_cutoff = floor(opts.select_cutoff);
@@ -70,6 +71,7 @@ classdef ZOHA_Sphere < handle
             assert(self.Lambda > 0)
             self.maximize = opts.maximize;  % maximize / minimize the function
             self.rankweight = opts.rankweight; % Switch between using raw score as weight VS use rank weight as score
+            self.rankbasis = pts.rankbasis; % whether include basis in the ranking comparison.
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
             fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f\n Learning rate: %.3f\n",...
                self.dimen, self.B, self.mu, self.lr)
@@ -117,15 +119,24 @@ classdef ZOHA_Sphere < handle
                 % B normalizer should go here larger cohort of codes gives more estimates 
                 weights = (scores(2:end) - scores(1)) / self.B; % / self.mu 
             else  % use a function of rank as weight, not really gradient. 
-                if self.maximize == false % note for weighted recombination, the maximization flag is here. 
-                    [~,code_rank]=ismember(scores(2:end), sort(scores(2:end),'ascend')); % find rank of ascending order
+                
+                if ~ self.rankbasis % if false, then exclude the first basis vector from rank (thus it receive no weights.)
+                    rankedscore = scores(2:end);
                 else
-                    [~,code_rank]=ismember(scores(2:end), sort(scores(2:end),'descend')); % find rank of descending order 
+                    rankedscore = scores;
                 end
-                % Consider do we need to consider the basis code and score here? Or no? 
+                if self.maximize == false % note for weighted recombination, the maximization flag is here. 
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'ascend')); % find rank of ascending order
+                else
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'descend')); % find rank of descending order 
+                end
                 % Note the weights here are internally normalized s.t. sum up to 1, no need to normalize more. 
                 raw_weights = rankweight(length(code_rank)); 
                 weights = raw_weights(code_rank); % map the rank to the corresponding weight of recombination
+                % Consider the basis in our rank! but the weight will be wasted as we don't use it. 
+                if self.rankbasis
+                    weights = weights(2:end); % the weight of the basis vector will do nothing! as the deviation will be nothing
+                end
             end
             % estimate gradient from the codes and scores
             % assume self.weights is a row vector 
@@ -159,7 +170,6 @@ classdef ZOHA_Sphere < handle
             self.counteval = self.counteval + 1;
         end
         self.istep = self.istep + 1;
-        % new_samples = new_samples / norm(new_samples, axis=1)[:, np.newaxis] * self.sphere_norm; 
         new_samples = renormalize(new_samples, self.sphere_norm);
         end
     end
