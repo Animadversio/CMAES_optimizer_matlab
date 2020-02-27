@@ -36,6 +36,7 @@ end
 % subplot(2,2,1)
 % subplot(2,2,3)
 % xlim([0, n_gen])
+
 % all_layers_wanted = {'conv4','conv5','conv3','conv2','conv1'};
 % n_unitsInChan = 10 ;
 % % select random units

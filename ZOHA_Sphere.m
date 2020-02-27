@@ -76,8 +76,8 @@ classdef ZOHA_Sphere < handle
             if self.rankweight
             	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
             end
-            % parameter checking 
-            ExpectExplAng = (sqrt(self.dimen) * self.mu) / pi * 180;
+            % Parameter Checking 
+            ExpectExplAng = (sqrt(self.dimen) * self.mu) / pi * 180; % Expected angular distance between sample and basis 
             fprintf("Expected angular exploration length %.1f deg\n",ExpectExplAng)
             if ExpectExplAng > 90
                 warning("Estimated exploration range too large! Destined to fail! Check parameters!\n")
@@ -85,10 +85,11 @@ classdef ZOHA_Sphere < handle
             if self.rankweight
                 weights = rankweight(self.B, self.select_cutoff);
                 ExpectStepSize = sqrt(self.dimen * sum(weights.^2)) * self.mu * self.lr / pi * 180;
+                % Expected angular distance of gradient step.  
                 fprintf("Estimated angular step size %.1f deg\n", ExpectStepSize)
                 if ExpectStepSize > 90 
-                warning("Estimated step size too large! Destined to fail! Check parameters!\n")
-            end
+	                warning("Estimated step size too large! Destined to fail! Check parameters!\n")
+	            end
             end
         end
         
