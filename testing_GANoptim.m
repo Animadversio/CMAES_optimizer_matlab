@@ -11,18 +11,25 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 %%
 % declare your number of generations
 n_gen = 100 ;
-% unit = {"fc8", 2}
-unit = {"conv2", 10, 100};
-options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, "Hupdate_freq",201,...
-        	"maximize",true, "max_norm",300, "rankweight",true, "nat_grad",false);
+unit = {"fc8", 2};
+% unit = {"conv2", 10, 100};
+
+options = struct("population_size",40, "select_cutoff",20, "lr",3, "mu",0.005, "Lambda",1, ...
+        "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "nat_grad",false);
 Optimizer = ZOHA_Sphere(4096, options);
+Visualize = true;
+Save = true;
+fign = 3;
 % Optimizer =  CMAES_simple(genes, []);
 % Optimizer = CMAES_ReducDim(genes, [], 50);
 % Optimizer.getBasis("rand")
 genes = normrnd(0,1,30,4096);
-genes = [zeros(1,4096) ; genes];
-Visualize = true;
-Save = true;
+genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
+if ~isempty(fign)
+    h = figure(fign);
+else
+    h = figure();
+end
 % all_layers_wanted = {'conv4','conv5','conv3','conv2','conv1'};
 % n_unitsInChan = 10 ;
 % % select random units
