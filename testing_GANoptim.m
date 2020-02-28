@@ -20,14 +20,14 @@ unit = {"fc8", 2};
 
 genes = normrnd(0,1,30,4096) * 9.04;
 genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
-Optimizer = CMAES_ReducDim(genes, [], 50);
-Optimizer.getBasis("rand");
-% Optimizer =  CMAES_simple(genes, []);
+% Optimizer = CMAES_ReducDim(genes, [], 50);
+% Optimizer.getBasis("rand");
+Optimizer =  CMAES_simple(genes, []);
 Visualize = true;
 Save = false;   
 fign = [];
 %%
-init_genes = normrnd(0,1,30,4096);
+init_genes = normrnd(0,1,30,4096);% * 9.04;
 init_genes = [mean(genes, 1) ; init_genes]; % have to make sure the first row cannot be all 0. 
 if ~isempty(fign)
     h = figure(fign);
