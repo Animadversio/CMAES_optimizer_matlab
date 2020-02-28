@@ -17,20 +17,21 @@ unit = {"fc8", 2};
 % options = struct("population_size",40, "select_cutoff",10, "lr",2.5, "mu",0.005, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", true, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
-% Optimizer =  CMAES_simple(genes, []);
+
 genes = normrnd(0,1,30,4096) * 9.04;
 genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
 Optimizer = CMAES_ReducDim(genes, [], 50);
 Optimizer.getBasis("rand");
-
+% Optimizer =  CMAES_simple(genes, []);
 Visualize = true;
 Save = false;   
 fign = [];
 %%
-genes = normrnd(0,1,30,4096) * 9.04;
-genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
+init_genes = normrnd(0,1,30,4096);
+init_genes = [mean(genes, 1) ; init_genes]; % have to make sure the first row cannot be all 0. 
 if ~isempty(fign)
     h = figure(fign);
+    h.Position = [210         276        1201         645];
 else
     h = figure();
     h.Position = [210         276        1201         645];
@@ -63,6 +64,7 @@ act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
 %    evolutions
 % define random set of input vectors (samples from a gaussian, 0, -1)
 % 30 x 4096
+genes = init_genes; 
 codes_all = [];
 scores_all = [];
 generations = [];
@@ -81,7 +83,7 @@ for iGen = 1:n_gen
     generations = [generations; iGen * ones(length(act_unit), 1)];
     % pass that unit's activations into CMAES_simple
     % save the new codes as 'genes'
-    [genes,tids] = Optimizer.doScoring(genes, act_unit, true);
+    [genes_new,tids] = Optimizer.doScoring(genes, act_unit, true);
     if Visualize
     % plot firing rate as it goes
     subplot(2,2,1)
@@ -123,6 +125,7 @@ for iGen = 1:n_gen
     imwrite( meanPic ,  ...
         fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name ) , 'jpg')
     end
+    genes = genes_new;
 end % of iGen
 norm_all = sqrt(sum(codes_all.^2,2));
 %%

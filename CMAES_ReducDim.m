@@ -49,7 +49,7 @@ classdef CMAES_ReducDim < handle
             %
             % subspac_d is the dimension of the subspace we are searching
             % in
-            obj.codes = codes; % not used..? Actually the codes are set in the first run
+            % obj.codes = codes; % not used..? Actually the codes are set in the first run
             if isempty(subspac_d)
                 obj.N = size(codes,2);
                 obj.code_len = obj.N; % dimension
