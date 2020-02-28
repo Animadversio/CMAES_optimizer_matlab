@@ -17,15 +17,17 @@ unit = {"fc8", 2};
 % options = struct("population_size",40, "select_cutoff",10, "lr",2.5, "mu",0.005, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", true, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
-Optimizer =  CMAES_simple(genes, []);
-% Optimizer = CMAES_ReducDim(genes, [], 50);
-% Optimizer.getBasis("rand")
+% Optimizer =  CMAES_simple(genes, []);
+genes = normrnd(0,1,30,4096) * 9.04;
+genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
+Optimizer = CMAES_ReducDim(genes, [], 50);
+Optimizer.getBasis("rand");
 
 Visualize = true;
-Save = false;
-fign = 8;
+Save = false;   
+fign = [];
 %%
-genes = normrnd(0,1,30,4096);
+genes = normrnd(0,1,30,4096) * 9.04;
 genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
 if ~isempty(fign)
     h = figure(fign);
