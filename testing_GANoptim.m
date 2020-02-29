@@ -14,12 +14,12 @@ n_gen = 100 ;
 unit = {"fc8", 2};
 % unit = {"conv2", 10, 100};
 
-% options = struct("population_size",40, "select_cutoff",10, "lr",2.5, "mu",0.005, "Lambda",1, ...
-%         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", true, "nat_grad",false);
-% Optimizer = ZOHA_Sphere(4096, options);
-options = struct("population_size",40, "select_cutoff",10, "lr_sph",2.5, "mu_sph",0.005, "lr_norm", 20, "mu_norm", 5, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",inf, "rankweight",true, "rankbasis", true, "nat_grad",false);
-Optimizer = ZOHA_Cylind(4096, options);
+options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
+        "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", false, "nat_grad",false);
+Optimizer = ZOHA_Sphere(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2.5, "mu_sph",0.003, "lr_norm", 10, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",400, "rankweight",true, "rankbasis", true, "nat_grad",false);
+% Optimizer = ZOHA_Cylind(4096, options);
 
 % genes = normrnd(0,1,30,4096) * 9.04;
 % genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
@@ -30,9 +30,9 @@ Optimizer = ZOHA_Cylind(4096, options);
 Visualize = true;
 Save = false;   
 fign = [];
-%%
-init_genes = normrnd(0,1,30,4096);
-init_genes = [mean(init_genes, 1) ; init_genes]; % have to make sure the first row cannot be all 0. 
+%
+init_genes = normrnd(0,1,30,4096)*4;
+init_genes = [init_genes]; % have to make sure the first row cannot be all 0. 
 if ~isempty(fign)
     h = figure(fign);
     h.Position = [210         276        1201         645];
@@ -139,4 +139,7 @@ norm_all = sqrt(sum(codes_all.^2,2));
 %%
 save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit)), "scores_all","codes_all","generations")
 %save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit), image_name(1:end-4)) ,'mean_activation')
-
+%%
+structString = structfun(@(field)sprintf(field),s,'UniformOutput',false);
+cellstr = struct2cell(structString);
+str = sprintf('\n%s',cellstr{:})

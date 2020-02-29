@@ -136,7 +136,7 @@ classdef ZOHA_Cylind < handle
             fprintf('First generation\n')
             self.xcur = codes(1, :);
             self.xnew = codes(1, :);
-            normxnew = norm(self.xcur);
+            normxnew = max(50, min(self.max_norm, norm(self.xcur)));
             % No reweighting as there should be a single code
         else
             % self.xcur = self.xnew % should be same as following line
@@ -173,7 +173,7 @@ classdef ZOHA_Cylind < handle
             % determine the moving direction and move. 
             if (~self.maximize) && (~self.rankweight), mov_sign = -1; else, mov_sign = 1; end
             self.xnew = ExpMap(self.xcur, mov_sign * self.lr_sph * HAgrad); % new basis vector
-            normxnew = min(self.max_norm, norm(self.xcur) + mov_sign * self.lr_norm * normgrad); % new norm of the basis  
+            normxnew = max(50,min(self.max_norm, norm(self.xcur) + mov_sign * self.lr_norm * normgrad)); % new norm of the basis  
         end
         % Generate new sample by sampling from Gaussian distribution
         self.tang_codes = zeros(self.B, N);  % Tangent vectors of exploration
@@ -185,7 +185,7 @@ classdef ZOHA_Cylind < handle
         new_samples(1, :) = self.xnew;
         self.tang_codes = self.mu_sph * self.outerV; % m + sig * Normal(0,C)
         new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
-        new_norms = min(self.max_norm, normxnew + self.mu_norm * randn(1, self.B)); % new norm of the basis
+        new_norms = max(50, min(self.max_norm, normxnew + self.mu_norm * randn(1, self.B))); % new norm of the basis
         self.code_norms = new_norms;
         new_samples = renormalize(new_samples, [normxnew, new_norms]');
 %         if mod((self.istep + 1), self.Hupdate_freq) == 0

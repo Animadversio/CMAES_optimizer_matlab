@@ -28,16 +28,11 @@ classdef CMAES_ReducDim < handle
         update_crit
         xmean
         init_x
-        
-        %
         %     TrialRecord.User.population_size = [];
         %     TrialRecord.User.init_x =        [] ;
         %     TrialRecord.User.Aupdate_freq =  10.0;
         %     TrialRecord.User.thread =        [];
-        
-        
     end % of properties
-    
     
     methods
         

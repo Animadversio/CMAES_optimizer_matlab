@@ -27,6 +27,7 @@ classdef ZOHA_Sphere < handle
         counteval = 0
         maximize  % maximize / minimize the function
         rankweight % Switch between using raw score as weight VS use rank weight as score
+        rankbasis % Ranking basis or rank weights only
     end
 
    	methods
