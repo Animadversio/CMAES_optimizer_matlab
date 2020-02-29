@@ -17,18 +17,22 @@ unit = {"fc8", 2};
 % options = struct("population_size",40, "select_cutoff",10, "lr",2.5, "mu",0.005, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",300, "rankweight",true, "rankbasis", true, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
+options = struct("population_size",40, "select_cutoff",10, "lr_sph",2.5, "mu_sph",0.005, "lr_norm", 20, "mu_norm", 5, "Lambda",1, ...
+        "Hupdate_freq",201, "maximize",true, "max_norm",inf, "rankweight",true, "rankbasis", true, "nat_grad",false);
+Optimizer = ZOHA_Cylind(4096, options);
 
-genes = normrnd(0,1,30,4096) * 9.04;
-genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
+% genes = normrnd(0,1,30,4096) * 9.04;
+% genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
 % Optimizer = CMAES_ReducDim(genes, [], 50);
 % Optimizer.getBasis("rand");
-Optimizer =  CMAES_simple(genes, []);
+
+% Optimizer =  CMAES_simple(genes, []);
 Visualize = true;
 Save = false;   
 fign = [];
 %%
-init_genes = normrnd(0,1,30,4096);% * 9.04;
-init_genes = [mean(genes, 1) ; init_genes]; % have to make sure the first row cannot be all 0. 
+init_genes = normrnd(0,1,30,4096);
+init_genes = [mean(init_genes, 1) ; init_genes]; % have to make sure the first row cannot be all 0. 
 if ~isempty(fign)
     h = figure(fign);
     h.Position = [210         276        1201         645];
@@ -93,6 +97,8 @@ for iGen = 1:n_gen
         'MarkerFaceAlpha',.2,'MarkerEdgeAlpha',.2)
     plot(iGen, mean(act_unit) ,'r.','markersize',20)
     xlim([0, n_gen])
+    ylabel("scores")
+    xlabel("generations")
     hold on
     subplot(2,2,3)
     code_norms = sqrt(sum(genes.^2, 2));
@@ -101,6 +107,8 @@ for iGen = 1:n_gen
         'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4)
     plot(iGen, mean(code_norms) ,'r.','markersize',20)
     xlim([0, n_gen])
+    ylabel("code norm")
+    xlabel("generations")
     hold on
     subplot(2,2,2)
     cla

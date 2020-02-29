@@ -94,7 +94,7 @@ classdef CMAES_ReducDim < handle
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used.
             
-            obj.sigma = 5.0;
+            obj.sigma = 27;
             
             obj.istep = -1;
             

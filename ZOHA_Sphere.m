@@ -31,7 +31,6 @@ classdef ZOHA_Sphere < handle
 
    	methods
    		function self = ZOHA_Sphere(space_dimen, options)
-            
             self.dimen = space_dimen;  % dimension of input space
             self.parseParameters(options); % parse the options into the initial values of optimizer
             
@@ -95,7 +94,81 @@ classdef ZOHA_Sphere < handle
             end
         end
         
-   		function [new_samples, new_ids] =  doScoring(self,codes,scores, maximize, TrialRecord)
+   		function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
+   			N = self.dimen;
+%         if self.hess_comp  % if this flag is true then more samples have been added to the trial
+%             error("Not Implemented");
+%             % self.step_hessian(scores)
+%             % % you should only get images for gradient estimation, get rid of the Hessian samples, or make use of it to estimate gradient
+%             % codes = codes(1:self.B+1, :)
+%             % scores = scores(1:self.B+1)
+%             % self.hess_comp = false
+%         end
+        if self.istep == -1
+            % Population Initialization: if without initialization, the first xmean is evaluated from weighted average all the natural images
+            fprintf('First generation\n')
+            self.xcur = codes(1, :);
+            self.xnew = codes(1, :);
+            % No reweighting as there should be a single code
+        else
+            % self.xcur = self.xnew % should be same as following line
+            self.xcur = codes(1, :);
+            if self.rankweight == false % use the score difference as weight
+                % B normalizer should go here larger cohort of codes gives more estimates 
+                weights = (scores(2:end) - scores(1)) / self.B; % / self.mu 
+            else  % use a function of rank as weight, not really gradient. 
+                
+                if ~ self.rankbasis % if false, then exclude the first basis vector from rank (thus it receive no weights.)
+                    rankedscore = scores(2:end);
+                else
+                    rankedscore = scores;
+                end
+                if self.maximize == false % note for weighted recombination, the maximization flag is here. 
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'ascend')); % find rank of ascending order
+                else
+                    [~,code_rank]=ismember(rankedscore, sort(rankedscore,'descend')); % find rank of descending order 
+                end
+                % Note the weights here are internally normalized s.t. sum up to 1, no need to normalize more. 
+                raw_weights = rankweight(length(code_rank)); 
+                weights = raw_weights(code_rank); % map the rank to the corresponding weight of recombination
+                % Consider the basis in our rank! but the weight will be wasted as we don't use it. 
+                if self.rankbasis
+                    weights = weights(2:end); % the weight of the basis vector will do nothing! as the deviation will be nothing
+                end
+            end
+            % estimate gradient from the codes and scores
+            % assume self.weights is a row vector 
+            HAgrad = weights * self.tang_codes;
+            fprintf("Estimated Gradient Norm %f\n",  norm(HAgrad))
+            % determine the moving direction and move. 
+            if (~self.maximize) && (~self.rankweight), mov_sign = -1; else, mov_sign = 1; end
+            self.xnew = ExpMap(self.xcur, mov_sign * self.lr * HAgrad);
+        end
+        % Generate new sample by sampling from Gaussian distribution
+        self.tang_codes = zeros(self.B, N);  % Tangent vectors of exploration
+        new_samples = zeros(self.B + 1, N);
+        self.innerU = randn(self.B, N);  % Isotropic gaussian distributions
+        self.outerV = self.innerU / sqrt(self.Lambda) + ((self.innerU * self.HessUC') .* self.HUDiag) * self.HessUC; % H^{-1/2}U
+        self.outerV = self.outerV - (self.outerV * self.xnew') * self.xnew / sum(self.xnew.^2);
+        
+        new_samples(1, :) = self.xnew;
+        self.tang_codes = self.mu * self.outerV; % m + sig * Normal(0,C)
+        new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
+%         if mod((self.istep + 1), self.Hupdate_freq) == 0
+%             % add more samples to next batch for hessian computation
+%             self.hess_comp = true;
+%             self.HinnerU = randn(self.HB, N);
+%             H_pos_samples = self.xnew + self.mu * self.HinnerU;
+%             H_neg_samples = self.xnew - self.mu * self.HinnerU;
+%             new_samples = [new_samples; H_pos_samples; H_neg_samples];
+%         end
+        new_ids = [];
+        for k = 1:size(new_samples,1)
+            new_ids = [new_ids, sprintf("gen%03d_%06d", self.istep+1, self.counteval)];
+            self.counteval = self.counteval + 1;
+        end
+        self.istep = self.istep + 1;
+        new_samples = renormalize(new_samples, self.sphere_norm);
         end
     end
 end
