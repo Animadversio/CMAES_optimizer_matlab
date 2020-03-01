@@ -39,13 +39,13 @@ classdef CMAES_simple < handle
     
     methods
         
-        function obj = CMAES_simple(codes, init_x) 
+        function obj = CMAES_simple(space_dimen, init_x, options) 
             % 2nd should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
             % object instantiation and parameter initialization 
-            obj.codes = codes; % not used..? Actually the codes are set in the first run
-            obj.N = size(codes,2);
+            % obj.codes = codes; % not used..? Actually the codes are set in the first run
+            obj.N = space_dimen; % size(codes,2);
             
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
             % the relation between dimension and population size.

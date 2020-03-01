@@ -28,6 +28,7 @@ classdef ZOHA_Sphere < handle
         maximize  % maximize / minimize the function
         rankweight % Switch between using raw score as weight VS use rank weight as score
         rankbasis % Ranking basis or rank weights only
+        opts % object to store options for the future need to examine or tune
     end
 
    	methods
@@ -78,6 +79,8 @@ classdef ZOHA_Sphere < handle
             if self.rankweight
             	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
             end
+            self.opts = opts; % save a copy of opts with default value updated. Easy for printing.
+            
             % Parameter Checking 
             ExpectExplAng = (sqrt(self.dimen) * self.mu) / pi * 180; % Expected angular distance between sample and basis 
             fprintf("Expected angular exploration length %.1f deg\n",ExpectExplAng)

@@ -36,7 +36,7 @@ classdef CMAES_ReducDim < handle
     
     methods
         
-        function obj = CMAES_ReducDim(codes, init_x, subspac_d) 
+        function obj = CMAES_ReducDim(space_dimen, init_x, subspac_d) 
             % 2nd arg should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
@@ -46,15 +46,14 @@ classdef CMAES_ReducDim < handle
             % in
             % obj.codes = codes; % not used..? Actually the codes are set in the first run
             if isempty(subspac_d)
-                obj.N = size(codes,2);
+                obj.N = space_dimen; % size(codes,2);
                 obj.code_len = obj.N; % dimension
             else
                 obj.N = subspac_d;
-                obj.code_len = size(codes,2);
+                obj.code_len = space_dimen; % size(codes,2);
             end
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
             % the relation between dimension and population size.
-            
             obj.randz = randn(obj.lambda, obj.N);  % Not Used.... initialize at the end of 1st generation
             obj.mu = obj.lambda / 2;  % number of parents/points for recombination
             
@@ -77,7 +76,6 @@ classdef CMAES_ReducDim < handle
             obj.Ainv = eye(obj.N, obj.N);
             obj.eigeneval=0;
             obj.counteval=0;
-            
             obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
             
             % if init_x is set in TrialRecord, use it, it will become the first

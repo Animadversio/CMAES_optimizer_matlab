@@ -38,6 +38,7 @@ classdef ZOHA_Cylind < handle
         nat_grad  % use the natural gradient definition, or normal gradient.
 
         select_cutoff
+        opts % object to store options for the future need to examine or tune
     end
 
    	methods
@@ -97,12 +98,13 @@ classdef ZOHA_Cylind < handle
             self.rankbasis = opts.rankbasis; % Switch between using raw score as weight VS use rank weight as score
             self.nat_grad = opts.nat_grad; % use the natural gradient definition, or normal gradient.
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
-
+            
             fprintf("\nCylindrical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: lr_norm: %.1f, mu_norm: %.4f, lr_sph: %.1f, mu_sph: %.4f, Lambda: %.2f",...
                self.dimen, self.B, self.lr_norm, self.mu_norm, self.lr_sph, self.mu_sph, self.Lambda)
             if self.rankweight
                 fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
             end
+            self.opts = opts; % save a copy of opts with default value updated. Easy for printing.
             
             % Parameter Checking  Need to go back to logic and red throught agai
             ExpectExplAng = (sqrt(self.dimen) * self.mu_sph) / pi * 180; % Expected angular distance between sample and basis 
