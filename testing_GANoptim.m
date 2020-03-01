@@ -6,7 +6,7 @@ pic_size = net.Layers(1).InputSize;
 % declare your generator
 GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
 addpath(GANpath)
-G = FC6Generator('matlabGANfc6.mat') ;
+G = FC6Generator('matlabGANfc6.mat');
 my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
 %%
 % declare your number of generations
