@@ -29,10 +29,11 @@ Optimizer = ZOHA_Sphere(4096, options);
 % Optimizer =  CMAES_simple(genes, []);
 Visualize = true;
 Save = false;   
-fign = [];
+
 %
 init_genes = normrnd(0,1,30,4096)*4;
 init_genes = [init_genes]; % have to make sure the first row cannot be all 0. 
+fign = [];
 if ~isempty(fign)
     h = figure(fign);
     h.Position = [210         276        1201         645];
@@ -40,10 +41,6 @@ else
     h = figure();
     h.Position = [210         276        1201         645];
 end
-% subplot(2,2,1)
-% subplot(2,2,3)
-% xlim([0, n_gen])
-
 % all_layers_wanted = {'conv4','conv5','conv3','conv2','conv1'};
 % n_unitsInChan = 10 ;
 % % select random units
@@ -143,3 +140,8 @@ save(fullfile(my_final_path, my_layer, sprintf('%02d',t_unit)), "scores_all","co
 structString = structfun(@(field)sprintf(field),s,'UniformOutput',false);
 cellstr = struct2cell(structString);
 str = sprintf('\n%s',cellstr{:})
+%%
+[~,idx]=max(scores_all);
+imwrite( G.visualize(codes_all(idx, :)), sprintf('%s_%02d.jpg',my_layer, iChan) , 'jpg')
+%%
+BestImg = G.visualize(codes_all(idx, :));

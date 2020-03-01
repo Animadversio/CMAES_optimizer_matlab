@@ -44,14 +44,14 @@ classdef CMAES_constraint < handle
     
     methods
         
-        function obj = CMAES_constraint(codes, init_x, constraint) 
+        function obj = CMAES_constraint(space_dimen, init_x, constraint, options) 
             % `Parameter`:
             % 2nd should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
             % object instantiation and parameter initialization 
-            obj.codes = codes; % not used..? Actually the codes are set in the first run
-            obj.N = size(codes,2);
+            % obj.codes = codes; % not used..? Actually the codes are set in the first run
+            obj.N = space_dimen; % size(codes,2);
             
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
             % the relation between dimension and population size.
@@ -86,9 +86,8 @@ classdef CMAES_constraint < handle
             obj.ps = zeros(1, obj.N);
             obj.A = eye(obj.N, obj.N);
             obj.Ainv = eye(obj.N, obj.N);
-            obj.eigeneval=0;
-            obj.counteval=0;
-            
+            obj.eigeneval = 0;
+            obj.counteval = 0;
             obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
             
             % if init_x is set in TrialRecord, use it, it will become the first
@@ -99,16 +98,14 @@ classdef CMAES_constraint < handle
             end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used. 
-            obj.sigma = 0.2; 
+            if ~isfield(options, "init_sigma"), options.init_sigma = 0.2;end
+            obj.sigma = options.init_sigma; 
             obj.istep = -1;
-            
         end % of initialization
-        
         
         function [new_samples, new_ids, TrialRecord] =  doScoring(obj,codes,scores,maximize,TrialRecord)
             
             obj.codes = codes;
-            
             % Sort by fitness and compute weighted mean into xmean
             if ~maximize
                 [sorted_score, code_sort_index] = sort(scores);  % add - operator it will do maximization.
@@ -134,7 +131,6 @@ classdef CMAES_constraint < handle
                 
                 
             else % if not first step
-                
                 fprintf('not first gen\n');
                 % xold = obj.xmean;
                 % Weighted recombination, move the mean value
