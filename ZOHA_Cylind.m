@@ -1,5 +1,5 @@
 classdef ZOHA_Cylind < handle
-	properties
+	properties(Access = public)
 		dimen % dimension of input space
         B  % population batch size
         Lambda  % diagonal regularizer for Hessian matrix

@@ -28,6 +28,7 @@ classdef CMAES_ReducDim < handle
         update_crit
         xmean
         init_x
+        opts
         %     TrialRecord.User.population_size = [];
         %     TrialRecord.User.init_x =        [] ;
         %     TrialRecord.User.Aupdate_freq =  10.0;
@@ -90,7 +91,7 @@ classdef CMAES_ReducDim < handle
             obj.sigma = 27;
             
             obj.istep = -1;
-            
+            obj.opts.init_sigma = obj.sigma;
         end % of initialization
         
         function basis = getBasis(obj, basis_opt, varargin)
