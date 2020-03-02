@@ -26,7 +26,7 @@ classdef CMAES_simple < handle
         update_crit
         xmean
         init_x
-        
+        opts
         %
         %     TrialRecord.User.population_size = [];
         %     TrialRecord.User.init_x =        [] ;
@@ -83,11 +83,10 @@ classdef CMAES_simple < handle
             end
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used.
-            
-            obj.sigma = 3.0;
-            
+            if ~isfield(options, "init_sigma"), options.init_sigma = 3;end
+            obj.sigma = options.init_sigma; 
             obj.istep = -1;
-            
+            obj.opts = options;
         end % of initialization
         
         

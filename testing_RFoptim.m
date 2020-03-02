@@ -2,7 +2,7 @@
 net = alexnet;
 pic_size = net.Layers(1).InputSize;
 refImg = imread("fc8_02.jpg");% BestImg;
-
+refImg = imread("conv4_02_100.jpg");
 %%
 %% Circle mask 
 Width = 256; Cent = Width /2 ; Radius = 100; %Center_dist = 40; 
@@ -34,7 +34,8 @@ else
 end
 %%
 genes = init_x;
-unit = {"fc8", 2};
+% unit = {"fc8", 2};
+unit = {"conv4", 2, 100};
 my_layer = unit{1} ; 
 iChan = unit{2} ; 
 if contains(my_layer,"fc")
@@ -134,3 +135,19 @@ for gene_i = 1:gene_num
     maskImgs(:,:,:,gene_i) = maskedImg;
 end
 end
+
+% function plot_ellipse(cx,cy,a,b,angle)
+% %a: width in pixels
+% %b: height in pixels
+% %cx: horizontal center
+% %cy: vertical center
+% %angle: orientation ellipse in degrees
+% %color: color code (e.g., 'r' or [0.4 0.5 0.1])
+% angle=angle/180*pi;
+% r=0:0.1:2*pi+0.1;
+% p=[(a*cos(r))' (b*sin(r))'];
+% alpha=[cos(angle) -sin(angle)
+%        sin(angle) cos(angle)];
+% p1=p*alpha;
+% patch(cx+p1(:,1),cy+p1(:,2),[0,0,0],'EdgeColor',[0,0,0]);
+% end
