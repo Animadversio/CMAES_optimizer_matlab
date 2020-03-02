@@ -12,29 +12,37 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 % options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "sphere_norm",300, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizer = ZOHA_Cylind(4096, options);
-% Optimizer = CMAES_ReducDim(4096, [], 50);
+
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Cylind(4096, options);
+
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",3, "mu_sph",0.045, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Cylind_ReducDim(4096, 50, options);
 % Optimizer.getBasis("rand");
-%Optimizer =  CMAES_simple(4096, [], struct());
+
+Optimizer = CMAES_ReducDim(4096, [], 50);
+Optimizer.getBasis("rand");
+
+% Optimizer =  CMAES_simple(4096, [], struct());
 n_gen = 100 ; % declare your number of generations
-unit = {"fc8", 2}; % Select target unit 
-% unit = {"conv4", 2, 100};
+% unit = {"fc8", 2}; % Select target unit 
+unit = {"conv2", 2, 100};
 Visualize = true;
 SaveImg = false;   
 SaveData = true; 
 options = Optimizer.opts; % updates the default parameters
-options.Optimizer = class(Optimizer);
+options.Optimizer = class(Optimizer);   
 %%
 % define random set of input vectors (samples from a gaussian, 0, -1)
 % 30 x 4096
-init_genes = normrnd(0,1,30,4096) * 3;% have to make sure the first row cannot be all 0. 
+init_genes = normrnd(0,1,30,4096) * 9.04;% have to make sure the first row cannot be all 0. 
 % normrnd(0,1,30,4096) * 9.04;
 % genes = normrnd(0,1,30,4096) * 9.04;
 % genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
 scatclr = "cyan";%[0.8500, 0.3250, 0.0980];
-fign = 42;
+fign = [];
 if ~isempty(fign)
     h = figure(fign);
     h.Position = [210         276        1201         645];
@@ -90,7 +98,7 @@ for iGen = 1:n_gen
     generations = [generations; iGen * ones(length(act_unit), 1)];
     % pass that unit's activations into CMAES_simple
     % save the new codes as 'genes'
-    [genes_new,tids] = Optimizer.doScoring(genes, act_unit, true);
+    [genes_new,tids] = Optimizer.doScoring(genes, act_unit, true, struct());
     if Visualize
     set(0,"CurrentFigure",h)
     % plot firing rate as it goes
