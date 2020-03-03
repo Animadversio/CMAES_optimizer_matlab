@@ -1,6 +1,14 @@
 %% Testing Optimizers on Real GANs
 % declare net
-net = alexnet;
+% net = alexnet;
+grad_vect = randn(1, dimen);
+score_lin = @(x) x * grad_vect';
+%%
+encode_vect = 5 * randn(1, dimen);
+sigma = 10000;
+Amp = 100;
+score_guass = @(x) Amp * exp(- sum((x - encode_vect).^2, 2)/sigma);
+%%
 pic_size = net.Layers(1).InputSize;
 % declare your generator
 GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
@@ -13,31 +21,31 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 %         "Hupdate_freq",201, "maximize",true, "sphere_norm",300, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
 
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 0, "mu_norm", 00, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizer = ZOHA_Cylind(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 1, "mu_norm", 20, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Cylind(4096, options);
 
 % options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Cylind_normmom(4096, options);
 
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.045, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizer = ZOHA_Cylind_ReducDim(4096, 50, options);
-Optimizer.getBasis("rand");
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.045, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Cylind_ReducDim(4096, 50, options);
+% Optimizer.getBasis("rand");
 
 % Optimizer = CMAES_ReducDim(4096, [], 50);
 % Optimizer.getBasis("rand");
-
+Optimizer =  GA_classic(randn(31, 4096), []);
 % Optimizer =  CMAES_simple(4096, [], struct());
 n_gen = 100 ; % declare your number of generations
-unit = {"fc8", 2}; % Select target unit 
 % unit = {"conv2", 2, 100};
 Visualize = true;
 SaveImg = false;   
 SaveData = true; 
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);   
+score_fun = score_guass; % score_lin
 %%
 % define random set of input vectors (samples from a gaussian, 0, -1)
 % 30 x 4096
@@ -64,23 +72,13 @@ annotation(h,'textbox',...
 % rng(1)
 % all_units = randsample(nrows*ncols,n_unitsInChan,false) ;
 % t_unit = all_units(iUnit) ; 
-my_layer = unit{1} ; 
-iChan = unit{2} ; 
-if contains(my_layer,"fc")
-	t_unit = 1 ;
-else
-	t_unit = unit{3};
-end
-exp_dir = fullfile(my_final_path, sprintf('%s_%d_%d',my_layer, iChan, t_unit) );
+
+exp_dir = fullfile(my_final_path, sprintf('Null_Gauss') );
 if ~exist(exp_dir,'dir')
     mkdir(exp_dir)
 end
 fprintf(exp_dir)
 fprintf(printOptionStr(options))
-% get activation size
-act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
-[nrows,ncols,nchans] = size(act1) ;
-[i,j] = ind2sub( [nrows ncols], t_unit ) ;
 %    evolutions
 genes = init_genes; 
 codes_all = [];
@@ -93,8 +91,7 @@ for iGen = 1:n_gen
     % feed them into net
     pics = imresize( pics , [pic_size(1) pic_size(2)]);
     % get activations
-    act1 = activations(net,pics,my_layer,'OutputAs','Channels');
-    act_unit = squeeze( act1(i,j,iChan,:) ) ;
+    act_unit = squeeze( score_fun(genes) ) ;
     disp(act_unit')
     % Record info 
     scores_all = [scores_all; act_unit]; 
