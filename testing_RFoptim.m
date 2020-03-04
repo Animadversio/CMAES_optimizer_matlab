@@ -60,7 +60,7 @@ for iGen = 1:n_gen
     % feed them into net
     pics = imresize( pics , [pic_size(1) pic_size(2)]);
     % get activations
-    act1 = activations(net, 255*pics, my_layer,'OutputAs','Channels');
+    act1 = activations(net, 255*pics, my_layer,'OutputAs','Channels'); % there is intrinsic normalization at 1st layer
     act_unit = squeeze( act1(i,j,iChan,:) ) ;
     % Record info 
     scores_all = [scores_all; act_unit]; 

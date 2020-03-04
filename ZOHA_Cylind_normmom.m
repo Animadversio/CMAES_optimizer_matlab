@@ -1,14 +1,17 @@
-classdef ZOHA_Cylind < handle
+classdef ZOHA_Cylind_normmom < handle
+    % Add momentum term to norm to prevent it from changing direction. 
 	properties(Access = public)
 		dimen % dimension of input space
         B  % population batch size
         Lambda  % diagonal regularizer for Hessian matrix
         lr_norm  % learning rate (step size) of moving along radial direction
         mu_norm  % step size of exploration along the radial direction
+        nu_norm
         lr_sph   % learning rate (step size) of moving around the sphere 
         mu_sph   % step size of exploration around the sphere
         max_norm
         
+        norm_moment
         grad  % estimated gradient
         innerU % inner random vectors with covariance matrix Id
         outerV  % outer random vectors with covariance matrix H^{-1}, equals self.innerU @ H^{-1/2}
@@ -42,12 +45,13 @@ classdef ZOHA_Cylind < handle
     end
 
    	methods
-   		function self = ZOHA_Cylind(space_dimen, options)
+   		function self = ZOHA_Cylind_normmom(space_dimen, options)
       % (space_dimen, population_size=40, lr_norm=0.5, mu_norm=5, lr_sph=2, mu_sph=0.005,
            % Lambda=1, Hupdate_freq=5, maximize=True, max_norm=300, rankweight=False, nat_grad=false)
         self.dimen = space_dimen;
         self.parseParameters(options); % parse the options into the initial values of optimizer
         
+        self.norm_moment = 1;
         self.grad = zeros(1, self.dimen);  % estimated gradient
         self.innerU = zeros(self.B, self.dimen);  % inner random vectors with covariance matrix Id
         self.outerV = zeros(self.B, self.dimen);  % outer random vectors with covariance matrix H^{-1}, equals self.innerU @ H^{-1/2}
@@ -62,15 +66,13 @@ classdef ZOHA_Cylind < handle
         self.HessD  = zeros(self.HB);  % diagonal values of the Lambda matrix
         self.HessV  = zeros(self.HB, self.HB); % seems not used....
         self.HUDiag = zeros(self.HB);
-        % self.tang_code_stored = reshape([], (0, self.dimen))
-        % self.scores = []
-        % self.N_in_samp = 0
    		end % of initialization
   
         function parseParameters(self, opts)
             if ~isfield(opts, "population_size"), opts.population_size = 40; end
             if ~isfield(opts, "select_cutoff"), opts.select_cutoff = opts.population_size / 2; end    
             if ~isfield(opts, "lr_norm"), opts.lr_norm = 40; end
+            if ~isfield(opts, "nu_norm"), opts.nu_norm = 0.9; end
             if ~isfield(opts, "mu_norm"), opts.mu_norm = 5; end
             if ~isfield(opts, "lr_sph"), opts.lr_sph = 2; end  
             if ~isfield(opts, "mu_sph"), opts.mu_sph = 0.005; end          
@@ -86,6 +88,7 @@ classdef ZOHA_Cylind < handle
             self.select_cutoff = floor(opts.select_cutoff);
             self.lr_norm = opts.lr_norm;  % learning rate (step size) on radial direction
             self.mu_norm = opts.mu_norm;  % scale of the Gaussian distribution on radial direction
+            self.nu_norm = opts.nu_norm; 
             self.lr_sph = opts.lr_sph; % learning rate (step size) of moving along gradient
             self.mu_sph = opts.mu_sph; % scale of the Gaussian distribution to estimate gradient
             self.Lambda = opts.Lambda;  % diagonal regularizer for Hessian matrix
@@ -175,7 +178,8 @@ classdef ZOHA_Cylind < handle
             % determine the moving direction and move. 
             if (~self.maximize) && (~self.rankweight), mov_sign = -1; else, mov_sign = 1; end
             self.xnew = ExpMap(self.xcur, mov_sign * self.lr_sph * HAgrad); % new basis vector
-            normxnew = max(50, min(self.max_norm, norm(self.xcur) + mov_sign * self.lr_norm * normgrad)); % new norm of the basis  
+            self.norm_moment = self.nu_norm * self.norm_moment + (1 - self.nu_norm) * normgrad;
+            normxnew = max(50, min(self.max_norm, norm(self.xcur) + mov_sign * self.lr_norm * self.norm_moment)); % new norm of the basis  
         end
         % Generate new sample by sampling from Gaussian distribution
         self.tang_codes = zeros(self.B, N);  % Tangent vectors of exploration

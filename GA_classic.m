@@ -16,6 +16,7 @@ classdef GA_classic < handle
         curr_sample_idc
         curr_sample_ids
         next_sample_idx
+        opts
 %         curr_samples
 %         genealogy
         %
@@ -47,9 +48,16 @@ classdef GA_classic < handle
                 obj.curr_sample_ids = init_ids;
             end
             obj.next_sample_idx = 1;
-            obj.maximize = 1;
+            obj.maximize = true;
             obj.istep = 0;
             
+            obj.opts.popsize = obj.popsize;
+            obj.opts.kT_mul = obj.kT_mul;
+            obj.opts.n_conserve = obj.n_conserve;
+            obj.opts.mut_size = obj.mut_size;
+            obj.opts.mut_rate = obj.mut_rate;
+            obj.opts.parental_skew = obj.parental_skew;
+            obj.opts.maximize = obj.maximize;
         end % of initialization
         
         function [new_samples, new_ids, TrialRecord] =  doScoring(self,codes,scores,maximize,TrialRecord)
