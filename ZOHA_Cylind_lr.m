@@ -1,4 +1,4 @@
-classdef ZOHA_Cylind < handle
+classdef ZOHA_Cylind_lr < handle
 	properties(Access = public)
 		dimen % dimension of input space
         B  % population batch size
@@ -39,10 +39,13 @@ classdef ZOHA_Cylind < handle
 
         select_cutoff
         opts % object to store options for the future need to examine or tune
+        mulist
+        mu_init
+        mu_final
     end
 
    	methods
-   		function self = ZOHA_Cylind(space_dimen, options)
+   		function self = ZOHA_Cylind_lr(space_dimen, options)
       % (space_dimen, population_size=40, lr_norm=0.5, mu_norm=5, lr_sph=2, mu_sph=0.005,
            % Lambda=1, Hupdate_freq=5, maximize=True, max_norm=300, rankweight=False, nat_grad=false)
         self.dimen = space_dimen;
@@ -81,7 +84,9 @@ classdef ZOHA_Cylind < handle
             if ~isfield(opts, "rankweight"), opts.rankweight = false; end
             if ~isfield(opts, "rankbasis"), opts.rankbasis = false; end
             if ~isfield(opts, "nat_grad"), opts.nat_grad = false; end
-    
+            if ~isfield(opts, "mu_init"), opts.mu_init = 0.02; end  % need to check
+            if ~isfield(opts, "mu_final"), opts.mu_final = 0.005; end
+            
             self.B = opts.population_size;  % population batch size
             self.select_cutoff = floor(opts.select_cutoff);
             self.lr_norm = opts.lr_norm;  % learning rate (step size) on radial direction
@@ -90,7 +95,9 @@ classdef ZOHA_Cylind < handle
             self.mu_sph = opts.mu_sph; % scale of the Gaussian distribution to estimate gradient
             self.Lambda = opts.Lambda;  % diagonal regularizer for Hessian matrix
             self.max_norm = opts.max_norm; % maximum norm to cap 
-
+            self.mu_init = opts.mu_init; 
+            self.mu_final = opts.mu_final; 
+            
             assert(self.Lambda > 0)
             self.maximize = opts.maximize;  % maximize / minimize the function
             self.max_norm = opts.max_norm;
@@ -98,7 +105,7 @@ classdef ZOHA_Cylind < handle
             self.rankbasis = opts.rankbasis; % Switch between using raw score as weight VS use rank weight as score
             self.nat_grad = opts.nat_grad; % use the natural gradient definition, or normal gradient.
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
-            
+            self.mulist = []; % do initialize use the functio lr_schedule
             fprintf("\nCylindrical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: lr_norm: %.1f, mu_norm: %.4f, lr_sph: %.1f, mu_sph: %.4f, Lambda: %.2f",...
                self.dimen, self.B, self.lr_norm, self.mu_norm, self.lr_sph, self.mu_sph, self.Lambda)
             if self.rankweight
@@ -122,7 +129,12 @@ classdef ZOHA_Cylind < handle
                 end
             end
         end
-
+        
+        function lr_schedule(self,gen_total)
+            % self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
+            self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+        end
+        
         function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
         N = self.dimen;
 %         if self.hess_comp  % if this flag is true then more samples have been added to the trial
@@ -185,7 +197,7 @@ classdef ZOHA_Cylind < handle
         self.outerV = self.outerV - (self.outerV * self.xnew') * self.xnew / norm(self.xnew)^2; % Orthogonalize 
         
         new_samples(1, :) = self.xnew;
-        self.tang_codes = self.mu_sph * self.outerV; % m + sig * Normal(0,C)
+        self.tang_codes = self.mulist(self.istep + 2)  * self.outerV; % m + sig * Normal(0,C)
         new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
         new_norms = max(50, min(self.max_norm, normxnew + self.mu_norm * randn(1, self.B))); % new norm of the basis
         self.code_norms = new_norms;
