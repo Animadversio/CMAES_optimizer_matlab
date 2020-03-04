@@ -4,6 +4,7 @@ net = alexnet;
 pic_size = net.Layers(1).InputSize;
 % declare your generator
 GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
+GANpath = "C:\Users\binxu\Documents\Monkey_Visual_Experiment_Data_Processing\DNN";
 addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat');
 my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
@@ -17,21 +18,21 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 %         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Cylind(4096, options);
 
-% options = struct("population_size",40, "select_cutoff",20, "lr_sph",3, "mu_sph",0.045, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
-%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-% Optimizer = ZOHA_Cylind_ReducDim(4096, 50, options);
-% Optimizer.getBasis("rand");
-
-Optimizer = CMAES_ReducDim(4096, [], 50);
+options = struct("population_size",40, "select_cutoff",20, "lr_sph",3, "mu_sph",0.045, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+Optimizer = ZOHA_Cylind_ReducDim(4096, 50, options);
 Optimizer.getBasis("rand");
+% 
+% Optimizer = CMAES_ReducDim(4096, [], 50);
+% Optimizer.getBasis("rand");
 
 % Optimizer =  CMAES_simple(4096, [], struct());
 n_gen = 100 ; % declare your number of generations
-% unit = {"fc8", 2}; % Select target unit 
-unit = {"conv2", 2, 100};
+unit = {"fc8", 2}; % Select target unit 
+% unit = {"conv2", 2, 100};
 Visualize = true;
 SaveImg = false;   
-SaveData = true; 
+SaveData = false; 
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);   
 %%
@@ -67,11 +68,13 @@ if contains(my_layer,"fc")
 else
 	t_unit = unit{3};
 end
+if SaveData || SaveImg
 exp_dir = fullfile(my_final_path, sprintf('%s_%d_%d',my_layer, iChan, t_unit) );
 if ~exist(exp_dir,'dir')
     mkdir(exp_dir)
 end
 fprintf(exp_dir)
+end
 fprintf(printOptionStr(options))
 % get activation size
 act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
