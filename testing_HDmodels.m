@@ -36,8 +36,8 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 
 % Optimizer = CMAES_ReducDim(4096, [], 50);
 % Optimizer.getBasis("rand");
-Optimizer =  GA_classic(randn(31, 4096), []);
-% Optimizer =  CMAES_simple(4096, [], struct());
+% Optimizer =  GA_classic(randn(31, 4096), []);
+Optimizer =  CMAES_simple(4096, [], struct());
 n_gen = 100 ; % declare your number of generations
 % unit = {"conv2", 2, 100};
 Visualize = true;
