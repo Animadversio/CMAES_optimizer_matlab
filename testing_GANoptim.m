@@ -46,7 +46,7 @@ unit = {"fc8", 2}; % Select target unit
 % unit = {"conv2", 2, 100};
 Visualize = true;
 SaveImg = false;   
-SaveData = true; 
+SaveData = false; 
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);   
 %%
@@ -55,7 +55,7 @@ options.Optimizer = class(Optimizer);
 %init_genes = normrnd(0,1,30,4096) * 4;% have to make sure the first row cannot be all 0. 
 % normrnd(0,1,30,4096) * 9.04;
 genes = normrnd(0,1,30,4096) * 4;
-init_genes = [mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
+init_genes = [6.1*mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
 scatclr = "cyan";%[0.8500, 0.3250, 0.0980];
 fign = []; 
 if ~isempty(fign)
