@@ -59,13 +59,13 @@ classdef ZOHA_Sphere_lr < handle
         function parseParameters(self, opts)
         	if ~isfield(opts, "population_size"), opts.population_size = 40; end
     		if ~isfield(opts, "select_cutoff"), opts.select_cutoff = opts.population_size / 2; end
-    		if ~isfield(opts, "mu"), opts.mu = 40; end
-    		if ~isfield(opts, "lr"), opts.lr = 40; end
+    		if ~isfield(opts, "mu"), opts.mu = 0.005; end
+    		if ~isfield(opts, "lr"), opts.lr = 2; end
     		if ~isfield(opts, "sphere_norm"), opts.sphere_norm = 300; end
     		if ~isfield(opts, "Lambda"), opts.Lambda = 1; end
     		if ~isfield(opts, "maximize"), opts.maximize = true; end
     		if ~isfield(opts, "rankweight"), opts.rankweight = true; end
-            if ~isfield(opts, "rankbasis"), opts.rankbasis = true; end
+            if ~isfield(opts, "rankbasis"), opts.rankbasis = false; end
     		if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 201; end
             if ~isfield(opts, "mu_init"), opts.mu_init = 0.02; end  % need to check
             if ~isfield(opts, "mu_final"), opts.mu_final = 0.005; end
@@ -107,9 +107,16 @@ classdef ZOHA_Sphere_lr < handle
             end
         end
         
-        function lr_schedule(self,gen_total)
-             self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
-            %self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+        function lr_schedule(self,gen_total,mode)
+            if nargin == 2
+                mode = "exp";
+            end
+            switch mode
+                case "lin"
+                self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
+                case "exp"
+                self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+            end
         end
         
    		function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)

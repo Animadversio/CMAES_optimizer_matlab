@@ -130,9 +130,16 @@ classdef ZOHA_Cylind_lr < handle
             end
         end
         
-        function lr_schedule(self,gen_total)
-            % self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
-            self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+        function lr_schedule(self,gen_total,mode)
+            if nargin == 2
+                mode = "exp";
+            end
+            switch mode
+                case "lin"
+                self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
+                case "exp"
+                self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+            end
         end
         
         function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
