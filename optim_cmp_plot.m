@@ -1,7 +1,7 @@
 %% Plot 
 
-result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
-output_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test";
+result_dir = fullfile(getenv("OneDrive"),"Optimizer_Tuning\noise_test\fc8_2_1");
+output_dir = fullfile(getenv("OneDrive"),"Optimizer_Tuning\noise_test");
 %%
 optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom"];
 nsr_list = [0.0, 0.1, 0.2, 0.4, 0.6];
@@ -10,7 +10,7 @@ data_fn = ls(fullfile(result_dir, sprintf("Evol_Data_%s_%s_*.mat", "ZOHA_Cylind"
 D = load(fullfile(result_dir, data_fn),"generations", "scores_all", "codes_all");
 %% 
 % Collect the score data, multiple trials
-result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
+result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
 optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic"];
 nsr_list = [0.0, 0.1, 0.2, 0.4, 0.6];
 score_col = {};
@@ -28,9 +28,10 @@ for optim_i = 1:length(optim_strs)
     end
 end
 %%
-optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr"];
+optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr","ZOHA_Sphere_lr"];
 result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
-for optim_i = 6
+result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
+for optim_i = 6:7
     for nsr_j = 1:length(nsr_list)
     param_fn = ls(fullfile(result_dir, sprintf("parameter_%s_%s_*.txt", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
     data_fn  = ls(fullfile(result_dir, sprintf("Evol_Data_%s_%s_*.mat", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
@@ -71,7 +72,7 @@ optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
 meanscore = cellfun(@double, cellfun(@mean, score_col, "UniformOutput", false));
 maxscore = cellfun(@double, cellfun(@max, score_col, "UniformOutput", false));
 [XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
-h=figure(1);h.Position = [532         351        1733         627];
+h=figure(1);clf;h.Position = [99         193        1733         771];
 subplot(121)
 imagesc(nanmean(meanscore,3))
 % score_text = cellfun(@(s) num2str(s,"%.1f"), ...
@@ -99,4 +100,4 @@ title("Max score of last 5 generations")
 axis equal tight
 colorbar()
 saveas(h, fullfile(output_dir, "optim_perform_noiselev.png"))
-% save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
+save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
