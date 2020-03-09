@@ -99,7 +99,7 @@ classdef ZOHA_Sphere_lr < handle
             % Parameter Checking 
             ExpectExplAng1 = (sqrt(self.dimen) * self.mu_init) / pi * 180; % Expected angular distance between sample and basis 
             ExpectExplAng2 = (sqrt(self.dimen) * self.mu_final) / pi * 180; % Expected angular distance between sample and basis 
-            fprintf("Expected angular exploration length %.1f - %.1f deg\n",ExpectExplAng1,ExpectExplAng2)
+            fprintf("Expected angular exploration length %.1f - %.1f deg\n", ExpectExplAng1, ExpectExplAng2)
             if ExpectExplAng1 > 90 || ExpectExplAng2 > 90
                 warning("Estimated exploration range too large! Destined to fail! Check parameters!\n")
             end
@@ -186,6 +186,7 @@ classdef ZOHA_Sphere_lr < handle
         new_samples(1, :) = self.xnew;
         self.tang_codes = self.mulist(self.istep + 2) * self.outerV; % m + sig * Normal(0,C)
         new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
+        fprintf("Current Exploration %.1f% deg", self.mulist(self.istep + 2) * sqrt(self.dimen) / pi * 180)
 %         if mod((self.istep + 1), self.Hupdate_freq) == 0
 %             % add more samples to next batch for hessian computation
 %             self.hess_comp = true;

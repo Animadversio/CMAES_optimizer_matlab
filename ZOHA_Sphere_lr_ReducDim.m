@@ -48,11 +48,11 @@ classdef ZOHA_Sphere_lr_ReducDim < ZOHA_Sphere_lr
         end
         
         function parseParameters(self, opts)
-            self.parseParameters@ZOHA_Sphere_lr_ReducDim(opts);
+            self.parseParameters@ZOHA_Sphere_lr(opts);
         end
         function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
             codes_coord = codes * self.basis'; % isometric transform by the basis set
-            [new_coord, new_ids] = self.doScoring@ZOHA_Sphere_lr_ReducDim(codes_coord, scores, maximize, TrialRecord);
+            [new_coord, new_ids] = self.doScoring@ZOHA_Sphere_lr(codes_coord, scores, maximize, TrialRecord);
             new_samples = new_coord * self.basis; % isometric inverse transform by the basis set
         end
     end
