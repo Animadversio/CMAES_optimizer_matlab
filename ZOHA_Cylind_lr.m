@@ -78,14 +78,14 @@ classdef ZOHA_Cylind_lr < handle
             if ~isfield(opts, "lr_sph"), opts.lr_sph = 2; end  
             if ~isfield(opts, "mu_sph"), opts.mu_sph = 0.005; end          
             if ~isfield(opts, "Lambda"), opts.Lambda = 1; end
-            if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 5; end
+            if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 201; end
             if ~isfield(opts, "maximize"), opts.maximize = true; end
             if ~isfield(opts, "max_norm"), opts.max_norm = 300; end
             if ~isfield(opts, "rankweight"), opts.rankweight = false; end
             if ~isfield(opts, "rankbasis"), opts.rankbasis = false; end
             if ~isfield(opts, "nat_grad"), opts.nat_grad = false; end
-            if ~isfield(opts, "mu_init"), opts.mu_init = 0.02; end  % need to check
-            if ~isfield(opts, "mu_final"), opts.mu_final = 0.005; end
+            if ~isfield(opts, "mu_init"), opts.mu_init = 0.01; end  % need to check
+            if ~isfield(opts, "mu_final"), opts.mu_final = 0.002; end
             
             self.B = opts.population_size;  % population batch size
             self.select_cutoff = floor(opts.select_cutoff);
