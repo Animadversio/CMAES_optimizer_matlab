@@ -2,7 +2,7 @@ classdef ZOHA_Sphere_lr < handle
 	properties
 		dimen   % dimension of input space
         B   % population batch size
-        mu   % scale of the Gaussian distribution to estimate gradient
+        % mu   % scale of the Gaussian distribution to estimate gradient
         Lambda   % diagonal regularizer for Hessian matrix
         lr  % learning rate (step size) of moving along gradient
         sphere_norm 
@@ -59,7 +59,7 @@ classdef ZOHA_Sphere_lr < handle
         function parseParameters(self, opts)
         	if ~isfield(opts, "population_size"), opts.population_size = 40; end
     		if ~isfield(opts, "select_cutoff"), opts.select_cutoff = opts.population_size / 2; end
-    		if ~isfield(opts, "mu"), opts.mu = 0.005; end
+    		%if ~isfield(opts, "mu"), opts.mu = 0.005; end
     		if ~isfield(opts, "lr"), opts.lr = 2; end
     		if ~isfield(opts, "sphere_norm"), opts.sphere_norm = 300; end
     		if ~isfield(opts, "Lambda"), opts.Lambda = 1; end
@@ -67,13 +67,19 @@ classdef ZOHA_Sphere_lr < handle
     		if ~isfield(opts, "rankweight"), opts.rankweight = true; end
             if ~isfield(opts, "rankbasis"), opts.rankbasis = false; end
     		if ~isfield(opts, "Hupdate_freq"), opts.Hupdate_freq = 201; end
-            if ~isfield(opts, "mu_init"), opts.mu_init = 0.02; end  % need to check
-            if ~isfield(opts, "mu_final"), opts.mu_final = 0.005; end
+            if ~isfield(opts, "mu_init"), opts.mu_init = 0.01; end  % need to check
+            if ~isfield(opts, "mu_final"), opts.mu_final = 0.002; end
+            if ~isfield(opts, "indegree"), opts.indegree = false; end
             self.B = opts.population_size;  % population batch size
             self.select_cutoff = floor(opts.select_cutoff);
-            self.mu = opts.mu;  % scale of the Gaussian distribution to estimate gradient
-            self.mu_init = opts.mu_init; 
-            self.mu_final = opts.mu_final; 
+            %self.mu = opts.mu;  % scale of the Gaussian distribution to estimate gradient
+            if ~ opts.indegree % mu in absolute units 
+                self.mu_init = opts.mu_init; 
+                self.mu_final = opts.mu_final; 
+            else % mu in degrees
+                self.mu_init = opts.mu_init / 180 * pi / sqrt(self.dimen); 
+                self.mu_final = opts.mu_final / 180 * pi / sqrt(self.dimen); 
+            end
             self.lr = opts.lr;  % learning rate (step size) of moving along gradient
             self.sphere_norm = opts.sphere_norm;
             self.Lambda = opts.Lambda;  % diagonal regularizer for Hessian matrix
@@ -83,26 +89,28 @@ classdef ZOHA_Sphere_lr < handle
             self.rankbasis = opts.rankbasis; % whether include basis in the ranking comparison.
             self.Hupdate_freq = floor(opts.Hupdate_freq);  % Update Hessian (add additional samples every how many generations)
             self.mulist = []; % do initialize use the functio lr_schedule
-            fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f\n Learning rate: %.3f\n",...
-               self.dimen, self.B, self.mu, self.lr)
+            fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f-%.3f\n Learning rate: %.3f\n",...
+               self.dimen, self.B, self.mu_init, self.mu_final, self.lr)
             if self.rankweight
             	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
             end
             self.opts = opts; % save a copy of opts with default value updated. Easy for printing.
           
             % Parameter Checking 
-            ExpectExplAng = (sqrt(self.dimen) * self.mu) / pi * 180; % Expected angular distance between sample and basis 
-            fprintf("Expected angular exploration length %.1f deg\n",ExpectExplAng)
-            if ExpectExplAng > 90
+            ExpectExplAng1 = (sqrt(self.dimen) * self.mu_init) / pi * 180; % Expected angular distance between sample and basis 
+            ExpectExplAng2 = (sqrt(self.dimen) * self.mu_final) / pi * 180; % Expected angular distance between sample and basis 
+            fprintf("Expected angular exploration length %.1f - %.1f deg\n", ExpectExplAng1, ExpectExplAng2)
+            if ExpectExplAng1 > 90 || ExpectExplAng2 > 90
                 warning("Estimated exploration range too large! Destined to fail! Check parameters!\n")
             end
             if self.rankweight
                 weights = rankweight(self.B, self.select_cutoff);
-                ExpectStepSize = sqrt(self.dimen * sum(weights.^2)) * self.mu * self.lr / pi * 180;
+                ExpectStepSize1 = sqrt(self.dimen * sum(weights.^2)) * self.mu_init * self.lr / pi * 180;
+                ExpectStepSize2 = sqrt(self.dimen * sum(weights.^2)) * self.mu_final * self.lr / pi * 180;
                 % Expected angular distance of gradient step.  
-                fprintf("Estimated angular step size %.1f deg\n", ExpectStepSize)
-                if ExpectStepSize > 90 
-	                warning("Estimated step size too large! Destined to fail! Check parameters!\n")
+                fprintf("Estimated angular step size %.1f - %.1f deg\n", ExpectStepSize1, ExpectStepSize2)
+                if ExpectStepSize1 > 90 || ExpectStepSize2 > 90
+                    warning("Estimated step size too large! Destined to fail! Check parameters!\n")
 	            end
             end
         end
@@ -142,7 +150,6 @@ classdef ZOHA_Sphere_lr < handle
                 % B normalizer should go here larger cohort of codes gives more estimates 
                 weights = (scores(2:end) - scores(1)) / self.B; % / self.mu 
             else  % use a function of rank as weight, not really gradient. 
-                
                 if ~ self.rankbasis % if false, then exclude the first basis vector from rank (thus it receive no weights.)
                     rankedscore = scores(2:end);
                 else
@@ -179,6 +186,7 @@ classdef ZOHA_Sphere_lr < handle
         new_samples(1, :) = self.xnew;
         self.tang_codes = self.mulist(self.istep + 2) * self.outerV; % m + sig * Normal(0,C)
         new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
+        fprintf("Current Exploration %.1f% deg", self.mulist(self.istep + 2) * sqrt(self.dimen) / pi * 180)
 %         if mod((self.istep + 1), self.Hupdate_freq) == 0
 %             % add more samples to next batch for hessian computation
 %             self.hess_comp = true;
