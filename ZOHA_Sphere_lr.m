@@ -124,6 +124,13 @@ classdef ZOHA_Sphere_lr < handle
                 self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
                 case "exp"
                 self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+                case "inv"
+                self.mulist = 15 + 1./(0.0017 * [1:gen_total] + 0.0146);
+                self.opts.mu_init = self.mulist(1);
+                self.opts.mu_final = self.mulist(end);
+                self.mulist = self.mulist / 180 * pi / sqrt(self.dimen);
+                self.mu_init = self.mulist(1); self.mu_final = self.mulist(end);
+                %self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
             end
         end
         
@@ -186,7 +193,7 @@ classdef ZOHA_Sphere_lr < handle
         new_samples(1, :) = self.xnew;
         self.tang_codes = self.mulist(self.istep + 2) * self.outerV; % m + sig * Normal(0,C)
         new_samples(2:end, :) = ExpMap(self.xnew, self.tang_codes); 
-        fprintf("Current Exploration %.1f% deg", self.mulist(self.istep + 2) * sqrt(self.dimen) / pi * 180)
+        fprintf("Current Exploration %.1f deg", self.mulist(self.istep + 2) * sqrt(self.dimen) / pi * 180)
 %         if mod((self.istep + 1), self.Hupdate_freq) == 0
 %             % add more samples to next batch for hessian computation
 %             self.hess_comp = true;

@@ -9,12 +9,12 @@ addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat');
 % my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
 %%
-my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test";
+my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
 % Set options for optimizer (There is default value, so it can run with empty structure)
 
-options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizer = ZOHA_Sphere(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Sphere(4096, options);
 % options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Cylind(4096, options);
@@ -35,18 +35,35 @@ Optimizer = ZOHA_Sphere(4096, options);
 % Optimizer.getBasis("rand");
 
 % Optimizer =  CMAES_simple(4096, [], struct());
-Optimizers{1} = CMAES_simple(4096, [], struct());
-options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{2} = ZOHA_Sphere(4096, options);
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{3} = ZOHA_Cylind(4096, options);
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{4} = ZOHA_Cylind_normmom(4096, options);
-
-nsr = 0.4;
+% nsr = 0;
+n_gen = 100 ;
+nsr_list = [0, 0.1, 0.2, 0.4, 0.6];
+for trial_k = 1:4
+for j=1:length(nsr_list)
+nsr = nsr_list(j);
+Optimizers = {};
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false,...
+%         "mu_init", 0.01, "mu_final", 0.002);
+% Optimizer = ZOHA_Cylind_lr(4096, options);
+options = struct("population_size",40, "select_cutoff",20, "lr",2, "Lambda",1, "sphere_norm",250, ...
+        "Hupdate_freq",201, "maximize",true, "rankweight",true, "rankbasis", false, "nat_grad",false,...
+        "mu_init", 70, "mu_final", 7.33, "indegree", true);
+Optimizer = ZOHA_Sphere_lr(4096, options);
+Optimizer.lr_schedule(n_gen);
+Optimizers{1} = Optimizer;
+param_lab = "Hexp";
+% Optimizers{1} = CMAES_simple(4096, [], struct());
+% options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{2} = ZOHA_Sphere(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{3} = ZOHA_Cylind(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{4} = ZOHA_Cylind_normmom(4096, options);
+% Optimizers{5} = GA_classic(randn(31, 4096), []);
 for i=1:length(Optimizers)
     Optimizer = Optimizers{i};
 n_gen = 100 ; % declare your number of generations
@@ -184,8 +201,10 @@ if SaveData % write the parametes strings to file.
     fprintf(fid, printOptionStr(options));
     fprintf("\n");
     fclose(fid);
-    save(fullfile(exp_dir, sprintf("Evol_Data_%s_%s_tr%04d.mat", class(Optimizer), num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
-    saveas(h, fullfile(exp_dir, sprintf("Evol_trace_%s_%s_tr%04d.png", class(Optimizer), num2str(nsr), exp_id)))
+    save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
+    saveas(h, fullfile(exp_dir, sprintf("Evol_trace_%s%s_%s_tr%04d.png", class(Optimizer), param_lab, num2str(nsr), exp_id)))
+end
+end
 end
 end
 %%
