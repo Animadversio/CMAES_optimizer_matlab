@@ -9,7 +9,7 @@ addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat');
 % my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
 %%
-my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test";
+my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
 % Set options for optimizer (There is default value, so it can run with empty structure)
 
 % options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...

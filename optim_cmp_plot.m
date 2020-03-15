@@ -13,7 +13,7 @@ D = load(fullfile(result_dir, data_fn),"generations", "scores_all", "codes_all")
 result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
 optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic"];
 nsr_list = [0.0, 0.1, 0.2, 0.4, 0.6];
-score_col = {};
+score_col = {}; mid_score_col = {};
 for optim_i = 1:length(optim_strs)
     for nsr_j = 1:length(nsr_list)
     param_fn = ls(fullfile(result_dir, sprintf("parameter_%s_%s_*.txt", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
@@ -23,15 +23,17 @@ for optim_i = 1:length(optim_strs)
     D = load(fullfile(result_dir, data_fn{trial_k}),"generations", "scores_all", "norm_all");
     max_gen = max(D.generations);
     final_scores = D.scores_all(D.generations > max_gen - 5);
+    mid_scores = D.scores_all(D.generations > 25 & D.generations <=30);
     score_col{optim_i, nsr_j, trial_k} = final_scores;
+    mid_score_col{optim_i, nsr_j, trial_k} = mid_scores;
     end
     end
 end
 %%
-optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr","ZOHA_Sphere_lr"];
+optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr","ZOHA_Sphere_lr","ZOHA_Sphere_lrHexp"];
 result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
 result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
-for optim_i = 6:7
+for optim_i = 8
     for nsr_j = 1:length(nsr_list)
     param_fn = ls(fullfile(result_dir, sprintf("parameter_%s_%s_*.txt", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
     data_fn  = ls(fullfile(result_dir, sprintf("Evol_Data_%s_%s_*.mat", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
@@ -40,7 +42,9 @@ for optim_i = 6:7
     D = load(fullfile(result_dir, data_fn{trial_k}),"generations", "scores_all", "norm_all");
     max_gen = max(D.generations);
     final_scores = D.scores_all(D.generations > max_gen - 5);
+    mid_scores = D.scores_all(D.generations > 25 & D.generations <=30);
     score_col{optim_i, nsr_j, trial_k} = final_scores;
+    mid_score_col{optim_i, nsr_j, trial_k} = mid_scores;
     end
     end
 end
@@ -66,7 +70,6 @@ end
 %% Plot the score trace 
 
 %% Plot the Mean and Max score of last few generations together. 
-
 score_col(cellfun(@isempty, score_col)) = {nan}; % turn empty cells to nan.
 optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
 meanscore = cellfun(@double, cellfun(@mean, score_col, "UniformOutput", false));
@@ -103,6 +106,26 @@ saveas(h, fullfile(output_dir, "optim_perform_noiselev.png"))
 save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
 
 %%
+%% Same logic as above, applied to the score of 25-30 gens
+mid_score_col(cellfun(@isempty, mid_score_col)) = {nan}; % turn empty cells to nan.
+optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
+meanscore = cellfun(@double, cellfun(@mean, mid_score_col, "UniformOutput", false));
+maxscore = cellfun(@double, cellfun(@max, mid_score_col, "UniformOutput", false));
+[XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
+h=figure(2);clf;h.Position = [99         193        1733         771];
+subplot(121)
+imagesc(nanmean(meanscore,3))
+title("Mean score of 25-30 generations")
+axis equal tight
+colorbar()
+subplot(122)
+title("Max score of 25-30 generations")
+axis equal tight
+colorbar()
+saveas(h, fullfile(output_dir, "optim_perform_mid_noiselev.png"))
+%save_to_pdf(h, fullfile(output_dir, "optim_perform_mid_noiselev.pdf"))
+
+%%
 
 h=figure();clf;h.Position = [ 320         215        1733         306];
 plot_score_collection(score_col, {class(Optimizer)}, nsr_list, "last 5 generations")
@@ -113,7 +136,6 @@ saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_mid.png",class(Optim
 h=figure();clf;h.Position = [ 320         215        1733         306];
 plot_score_collection(pre_score_col, {class(Optimizer)}, nsr_list, "15-20 generations")
 saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_pre.png",class(Optimizer),param_lab)))
-
 
 function plot_score_collection(score_col, optim_strs, nsr_list, title_str)
 score_col(cellfun(@isempty, score_col)) = {nan}; % turn empty cells to nan.
@@ -144,4 +166,3 @@ title(sprintf("Max score of %s", title_str))
 axis equal tight
 colorbar()
 end
-
