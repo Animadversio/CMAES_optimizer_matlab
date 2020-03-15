@@ -101,3 +101,47 @@ axis equal tight
 colorbar()
 saveas(h, fullfile(output_dir, "optim_perform_noiselev.png"))
 save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
+
+%%
+
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(score_col, {class(Optimizer)}, nsr_list, "last 5 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_final.png",class(Optimizer),param_lab)))
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(mid_score_col, {class(Optimizer)}, nsr_list, "25-30 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_mid.png",class(Optimizer),param_lab)))
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(pre_score_col, {class(Optimizer)}, nsr_list, "15-20 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_pre.png",class(Optimizer),param_lab)))
+
+
+function plot_score_collection(score_col, optim_strs, nsr_list, title_str)
+score_col(cellfun(@isempty, score_col)) = {nan}; % turn empty cells to nan.
+optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
+meanscore = cellfun(@double, cellfun(@mean, score_col, "UniformOutput", false));
+maxscore = cellfun(@double, cellfun(@max, score_col, "UniformOutput", false));
+[XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
+subplot(121)
+imagesc(nanmean(meanscore,3))
+score_text = cellfun(@(m,s) sprintf("%.1f\n(%.2f)", m, s), ...
+            num2cell(nanmean(meanscore,3)), num2cell(nanstd(meanscore,1,3)), 'UniformOutput', false);
+text(XX(:), YY(:), score_text, 'HorizontalAlignment', 'Center', "FontSize", 15)
+xticks(1:length(nsr_list));  xticklabels(compose("%.1f", nsr_list))
+yticks(1:length(optim_strs));yticklabels(optim_names)
+ylabel("Optimizer");xlabel("noise level")
+title(sprintf("Mean score of %s", title_str))
+axis equal tight
+colorbar()
+subplot(122)
+score_text = cellfun(@(m,s) sprintf("%.1f\n(%.2f)", m, s), ...
+            num2cell(nanmean(maxscore,3)), num2cell(nanstd(maxscore,1,3)), 'UniformOutput', false);
+imagesc(nanmean(maxscore,3))
+text(XX(:), YY(:), score_text, 'HorizontalAlignment', 'Center', "FontSize", 15)
+xticks(1:length(nsr_list));  xticklabels(compose("%.1f", nsr_list))
+yticks(1:length(optim_strs));yticklabels(optim_names)
+ylabel("Optimizer");xlabel("noise level")
+title(sprintf("Max score of %s", title_str))
+axis equal tight
+colorbar()
+end
+
