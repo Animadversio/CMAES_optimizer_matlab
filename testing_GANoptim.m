@@ -13,11 +13,11 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 % options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "sphere_norm",300, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Sphere(4096, options);
-n_gen = 100;
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 0, "mu_norm", 00, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false,"mu_init", 0.02, "mu_final", 0.005);
-Optimizer = ZOHA_Cylind_lr(4096, options);
-Optimizer.lr_schedule(n_gen);
+% n_gen = 100;
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 0, "mu_norm", 00, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false,"mu_init", 0.02, "mu_final", 0.005);
+% Optimizer = ZOHA_Cylind_lr(4096, options);
+% Optimizer.lr_schedule(n_gen);
 % 
 % % options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
 % %         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
@@ -41,6 +41,11 @@ Optimizer.lr_schedule(n_gen);
 
 %Optimizer =  CMAES_simple(4096, [], struct());
 
+options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
+            "sphere_norm", 300, "lr",1.5, "mu_init", 40, "mu_final", 7.33, "indegree", true);
+Optimizer = ZOHA_Sphere_lr_euclid(4096, options);
+Optimizer.lr_schedule(100, "exp");
+
 n_gen = 100 ; % declare your number of generations
 unit = {"fc8", 2}; % Select target unit 
 % unit = {"conv2", 2, 100};
@@ -56,7 +61,7 @@ options.Optimizer = class(Optimizer);
 % normrnd(0,1,30,4096) * 9.04;
 genes = normrnd(0,1,30,4096) * 4;
 init_genes = [6.1*mean(genes, 1) ; genes]; % have to make sure the first row cannot be all 0. 
-scatclr = "cyan";%[0.8500, 0.3250, 0.0980];
+scatclr = "blue";%[0.8500, 0.3250, 0.0980];
 fign = []; 
 if ~isempty(fign)
     h = figure(fign);
@@ -108,7 +113,7 @@ for iGen = 1:n_gen
     % get activations
     act1 = activations(net,pics,my_layer,'OutputAs','Channels');
     act_unit = squeeze( act1(i,j,iChan,:) ) ;
-    disp(act_unit')
+    %disp(act_unit')
     % Record info 
     scores_all = [scores_all; act_unit]; 
     codes_all = [codes_all; genes];

@@ -1,7 +1,7 @@
 %% Plot 
 
-result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
-output_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test";
+result_dir = fullfile(getenv("OneDrive"),"Optimizer_Tuning\noise_test\fc8_2_1");
+output_dir = fullfile(getenv("OneDrive"),"Optimizer_Tuning\noise_test");
 %%
 optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom"];
 nsr_list = [0.0, 0.1, 0.2, 0.4, 0.6];
@@ -10,10 +10,10 @@ data_fn = ls(fullfile(result_dir, sprintf("Evol_Data_%s_%s_*.mat", "ZOHA_Cylind"
 D = load(fullfile(result_dir, data_fn),"generations", "scores_all", "codes_all");
 %% 
 % Collect the score data, multiple trials
-result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
+result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test\fc8_2_1";
 optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic"];
 nsr_list = [0.0, 0.1, 0.2, 0.4, 0.6];
-score_col = {};
+score_col = {}; mid_score_col = {};
 for optim_i = 1:length(optim_strs)
     for nsr_j = 1:length(nsr_list)
     param_fn = ls(fullfile(result_dir, sprintf("parameter_%s_%s_*.txt", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
@@ -23,14 +23,17 @@ for optim_i = 1:length(optim_strs)
     D = load(fullfile(result_dir, data_fn{trial_k}),"generations", "scores_all", "norm_all");
     max_gen = max(D.generations);
     final_scores = D.scores_all(D.generations > max_gen - 5);
+    mid_scores = D.scores_all(D.generations > 25 & D.generations <=30);
     score_col{optim_i, nsr_j, trial_k} = final_scores;
+    mid_score_col{optim_i, nsr_j, trial_k} = mid_scores;
     end
     end
 end
 %%
-optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr"];
+optim_strs = ["CMAES_simple", "ZOHA_Sphere", "ZOHA_Cylind", "ZOHA_Cylind_normmom","GA_classic","ZOHA_Cylind_lr","ZOHA_Sphere_lr","ZOHA_Sphere_lrHexp"];
 result_dir = "C:\Users\ponce\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
-for optim_i = 6
+result_dir = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test\fc8_2_1";
+for optim_i = 8
     for nsr_j = 1:length(nsr_list)
     param_fn = ls(fullfile(result_dir, sprintf("parameter_%s_%s_*.txt", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
     data_fn  = ls(fullfile(result_dir, sprintf("Evol_Data_%s_%s_*.mat", optim_strs(optim_i), num2str(nsr_list(nsr_j)))));
@@ -39,7 +42,9 @@ for optim_i = 6
     D = load(fullfile(result_dir, data_fn{trial_k}),"generations", "scores_all", "norm_all");
     max_gen = max(D.generations);
     final_scores = D.scores_all(D.generations > max_gen - 5);
+    mid_scores = D.scores_all(D.generations > 25 & D.generations <=30);
     score_col{optim_i, nsr_j, trial_k} = final_scores;
+    mid_score_col{optim_i, nsr_j, trial_k} = mid_scores;
     end
     end
 end
@@ -65,13 +70,12 @@ end
 %% Plot the score trace 
 
 %% Plot the Mean and Max score of last few generations together. 
-
 score_col(cellfun(@isempty, score_col)) = {nan}; % turn empty cells to nan.
 optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
 meanscore = cellfun(@double, cellfun(@mean, score_col, "UniformOutput", false));
 maxscore = cellfun(@double, cellfun(@max, score_col, "UniformOutput", false));
 [XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
-h=figure(1);h.Position = [532         351        1733         627];
+h=figure(1);clf;h.Position = [99         193        1733         771];
 subplot(121)
 imagesc(nanmean(meanscore,3))
 % score_text = cellfun(@(s) num2str(s,"%.1f"), ...
@@ -99,4 +103,66 @@ title("Max score of last 5 generations")
 axis equal tight
 colorbar()
 saveas(h, fullfile(output_dir, "optim_perform_noiselev.png"))
-% save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
+save_to_pdf(h, fullfile(output_dir, "optim_perform_noiselev.pdf"))
+
+%%
+%% Same logic as above, applied to the score of 25-30 gens
+mid_score_col(cellfun(@isempty, mid_score_col)) = {nan}; % turn empty cells to nan.
+optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
+meanscore = cellfun(@double, cellfun(@mean, mid_score_col, "UniformOutput", false));
+maxscore = cellfun(@double, cellfun(@max, mid_score_col, "UniformOutput", false));
+[XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
+h=figure(2);clf;h.Position = [99         193        1733         771];
+subplot(121)
+imagesc(nanmean(meanscore,3))
+title("Mean score of 25-30 generations")
+axis equal tight
+colorbar()
+subplot(122)
+title("Max score of 25-30 generations")
+axis equal tight
+colorbar()
+saveas(h, fullfile(output_dir, "optim_perform_mid_noiselev.png"))
+%save_to_pdf(h, fullfile(output_dir, "optim_perform_mid_noiselev.pdf"))
+
+%%
+
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(score_col, {class(Optimizer)}, nsr_list, "last 5 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_final.png",class(Optimizer),param_lab)))
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(mid_score_col, {class(Optimizer)}, nsr_list, "25-30 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_mid.png",class(Optimizer),param_lab)))
+h=figure();clf;h.Position = [ 320         215        1733         306];
+plot_score_collection(pre_score_col, {class(Optimizer)}, nsr_list, "15-20 generations")
+saveas(h, fullfile(my_final_path, sprintf("%s%s_noise_score_pre.png",class(Optimizer),param_lab)))
+
+function plot_score_collection(score_col, optim_strs, nsr_list, title_str)
+score_col(cellfun(@isempty, score_col)) = {nan}; % turn empty cells to nan.
+optim_names = cellfun(@(c) strrep(c, "_"," "), optim_strs);
+meanscore = cellfun(@double, cellfun(@mean, score_col, "UniformOutput", false));
+maxscore = cellfun(@double, cellfun(@max, score_col, "UniformOutput", false));
+[XX,YY]=meshgrid(1:length(nsr_list),1:length(optim_strs));
+subplot(121)
+imagesc(nanmean(meanscore,3))
+score_text = cellfun(@(m,s) sprintf("%.1f\n(%.2f)", m, s), ...
+            num2cell(nanmean(meanscore,3)), num2cell(nanstd(meanscore,1,3)), 'UniformOutput', false);
+text(XX(:), YY(:), score_text, 'HorizontalAlignment', 'Center', "FontSize", 15)
+xticks(1:length(nsr_list));  xticklabels(compose("%.1f", nsr_list))
+yticks(1:length(optim_strs));yticklabels(optim_names)
+ylabel("Optimizer");xlabel("noise level")
+title(sprintf("Mean score of %s", title_str))
+axis equal tight
+colorbar()
+subplot(122)
+score_text = cellfun(@(m,s) sprintf("%.1f\n(%.2f)", m, s), ...
+            num2cell(nanmean(maxscore,3)), num2cell(nanstd(maxscore,1,3)), 'UniformOutput', false);
+imagesc(nanmean(maxscore,3))
+text(XX(:), YY(:), score_text, 'HorizontalAlignment', 'Center', "FontSize", 15)
+xticks(1:length(nsr_list));  xticklabels(compose("%.1f", nsr_list))
+yticks(1:length(optim_strs));yticklabels(optim_names)
+ylabel("Optimizer");xlabel("noise level")
+title(sprintf("Max score of %s", title_str))
+axis equal tight
+colorbar()
+end

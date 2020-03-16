@@ -9,12 +9,12 @@ addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat');
 % my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
 %%
-my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\noise_test";
+my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
 % Set options for optimizer (There is default value, so it can run with empty structure)
 
-options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizer = ZOHA_Sphere(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizer = ZOHA_Sphere(4096, options);
 % options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
 %         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
 % Optimizer = ZOHA_Cylind(4096, options);
@@ -35,26 +35,38 @@ Optimizer = ZOHA_Sphere(4096, options);
 % Optimizer.getBasis("rand");
 
 % Optimizer =  CMAES_simple(4096, [], struct());
-Optimizers{1} = CMAES_simple(4096, [], struct());
-options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{2} = ZOHA_Sphere(4096, options);
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{3} = ZOHA_Cylind(4096, options);
-options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
-        "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
-Optimizers{4} = ZOHA_Cylind_normmom(4096, options);
-
-nsr = 0.4;
-for i=1:length(Optimizers)
-    Optimizer = Optimizers{i};
+% Optimizers{1} = CMAES_simple(4096, [], struct());
+% options = struct("population_size",40, "select_cutoff",20, "lr",2, "mu",0.005, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "sphere_norm",350, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{2} = ZOHA_Sphere(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 10, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{3} = ZOHA_Cylind(4096, options);
+% options = struct("population_size",40, "select_cutoff",20, "lr_sph",2, "mu_sph",0.005, "lr_norm", 5, "mu_norm", 5, "nu_norm", 0.95, "Lambda",1, ...
+%         "Hupdate_freq",201, "maximize",true, "max_norm",800, "rankweight",true, "rankbasis", false, "nat_grad",false);
+% Optimizers{4} = ZOHA_Cylind_normmom(4096, options);
+%%
+score_col = {};
+mid_score_col = {};
+pre_score_col = {};
 n_gen = 100 ; % declare your number of generations
 unit = {"fc8", 2}; % Select target unit 
-% unit = {"conv2", 2, 100};
 Visualize = true;
 SaveImg = false;   
 SaveData = true; 
+for trial_k = 1:5
+nsr_list = [0, 0.1, 0.2, 0.4, 0.6];
+for nsr_j = 1:5
+nsr = nsr_list(nsr_j);
+for optim_i=1%:length(Optimizers)
+    %Optimizer = Optimizers{i};
+options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
+        "sphere_norm", 300, "lr",1.5, "mu_init", 50, "mu_final", 7.33, "indegree", true);
+Optimizer = ZOHA_Sphere_lr_euclid(4096, options);
+Optimizer.lr_schedule(100, "exp");
+param_lab = "Lmu";
+%%
+% unit = {"conv2", 2, 100};
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);   
 %%
@@ -118,8 +130,8 @@ for iGen = 1:n_gen
     act1 = activations(net,pics,my_layer,'OutputAs','Channels');
     act_unit = squeeze( act1(i,j,iChan,:) ) ;
     act_unit_noise = act_unit .* (1 + nsr * randn(size(act_unit)));
-    disp(act_unit')
-    disp(act_unit_noise')
+    fprintf("Gen %d, score mean %.2f (%.2f), max %.2f\t", iGen, mean(act_unit), std(act_unit), max(act_unit)) %disp(act_unit')
+    fprintf("with nsr %.1f, score mean %.2f (%.2f), max %.2f\n", nsr, mean(act_unit_noise), std(act_unit_noise), max(act_unit_noise))
     % Record info 
     scores_all = [scores_all; act_unit]; 
     codes_all = [codes_all; genes];
@@ -180,14 +192,20 @@ norm_all = sqrt(sum(codes_all.^2,2));
 %
 exp_id = randi(9999,1);
 if SaveData % write the parametes strings to file.
-    fid = fopen(fullfile(exp_dir, sprintf('parameter_%s_%s_tr%04d.txt', class(Optimizer), num2str(nsr), exp_id)), 'wt');
+    fid = fopen(fullfile(exp_dir, sprintf('parameter_%s%s_%s_tr%04d.txt', class(Optimizer), param_lab, num2str(nsr), exp_id)), 'wt');
     fprintf(fid, printOptionStr(options));
     fprintf("\n");
     fclose(fid);
-    save(fullfile(exp_dir, sprintf("Evol_Data_%s_%s_tr%04d.mat", class(Optimizer), num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
-    saveas(h, fullfile(exp_dir, sprintf("Evol_trace_%s_%s_tr%04d.png", class(Optimizer), num2str(nsr), exp_id)))
+    save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
+    saveas(h, fullfile(exp_dir, sprintf("Evol_trace_%s%s_%s_tr%04d.png", class(Optimizer), param_lab, num2str(nsr), exp_id)))
 end
 end
+score_col{optim_i, nsr_j, trial_k} = scores_all(generations>95);
+mid_score_col{optim_i, nsr_j, trial_k} = scores_all(generations>25 & generations<=30);
+pre_score_col{optim_i, nsr_j, trial_k} = scores_all(generations>15 & generations<=20);
+end
+end
+save(fullfile(my_final_path, sprintf("%s%s_score_arr.mat", class(Optimizer), param_lab)),"score_col","mid_score_col","pre_score_col");
 %%
 [~,idx]=max(scores_all);
 imwrite( G.visualize(codes_all(idx, :)), sprintf('%s_%02d_%d.jpg',my_layer, iChan, t_unit) , 'jpg')
