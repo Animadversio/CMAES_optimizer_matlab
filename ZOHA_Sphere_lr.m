@@ -125,6 +125,7 @@ classdef ZOHA_Sphere_lr < handle
                 case "exp"
                 self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
             end
+            self.opts.mulist = self.mulist;
         end
         
    		function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
