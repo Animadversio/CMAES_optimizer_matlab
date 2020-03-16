@@ -109,6 +109,8 @@ classdef ZOHA_Sphere_lr_euclid < handle
         
    		function [new_samples, new_ids] =  doScoring(self, codes, scores, maximize, TrialRecord)
    		N = self.dimen;
+        fprintf('max score %.3f, mean %.3f, std %.3f\n',...
+                max(scores),mean(scores),std(scores) )
         if self.istep == -1
             % Population Initialization: if without initialization, the first xmean is evaluated from weighted average all the natural images
             fprintf('First generation\n')
