@@ -1,7 +1,7 @@
-function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id] = GANoptim_test_fun(unit, n_gen, Optimizer, init_genes, nsr, fign, param_lab)
+function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id] = GANoptim_test_fun(unit, n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path)
 %fign = [];
-my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
-Visualize = true;
+% my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
+Visualize = false;
 SaveImg = false;   
 SaveData = true; 
 scatclr = "blue"; % color of scatter plot
