@@ -101,7 +101,8 @@ classdef CMAES_simple < handle
                 [sorted_score, code_sort_index] = sort(scores, 'descend');
             end
             % TODO: maybe print the sorted score?
-            disp(sorted_score')
+            % disp(sorted_score')
+            fprintf("Mean %.3f (%.3f)\n",mean(sorted_score),std(sorted_score))
             
             if obj.istep == -1 % if first step
                 fprintf('is first gen\n');

@@ -104,6 +104,12 @@ classdef ZOHA_Sphere_lr_euclid < handle
                 self.mulist = linspace(self.mu_init, self.mu_final, gen_total);
                 case "exp"
                 self.mulist = logspace(log10(self.mu_init), log10(self.mu_final), gen_total);
+                case "inv"
+                self.mulist = 15 + 1./(0.0017 * [1:gen_total] + 0.0146);
+                self.opts.mu_init = self.mulist(1);
+                self.opts.mu_final = self.mulist(end);
+                self.mulist = self.mulist / 180 * pi / sqrt(self.dimen);
+                self.mu_init = self.mulist(1); self.mu_final = self.mulist(end);
             end
         end
         
