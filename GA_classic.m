@@ -31,11 +31,14 @@ classdef GA_classic < handle
     
     methods
         
-        function obj = GA_classic(init_codes, init_ids) 
+        function obj = GA_classic(init_codes, init_ids, options) 
             % 2nd arg should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
             % object instantiation and parameter initialization 
+            if nargin==2
+                options = struct();
+            end
             obj.popsize = 40;
             obj.kT_mul = 2;
             obj.n_conserve = 10;

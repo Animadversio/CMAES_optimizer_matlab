@@ -46,13 +46,18 @@ classdef CMAES_simple < handle
             % object instantiation and parameter initialization 
             % obj.codes = codes; % not used..? Actually the codes are set in the first run
             obj.N = space_dimen; % size(codes,2);
-            
+            if ~isfield(options, "popsize")
             obj.lambda = 4 + floor(3 * log2(obj.N));  % population size, offspring number
             % the relation between dimension and population size.
-            
+            else
+            obj.lambda = options.popsize;
+            end
             obj.randz = randn(obj.lambda, obj.N);  % Not Used.... initialize at the end of 1st generation
+            if ~isfield(options, "mu")
             obj.mu = obj.lambda / 2;  % number of parents/points for recombination
-            
+            else
+            obj.mu = options.mu;
+            end
             %  Select half the population size as parents
             obj.weights = log(obj.mu + 1/2) - log( 1:floor(obj.mu));  % muXone array for weighted recombination
             obj.mu = floor(obj.mu);
@@ -73,7 +78,6 @@ classdef CMAES_simple < handle
             obj.eigeneval=0;
             obj.counteval=0;
             
-            obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
             
             % if init_x is set in TrialRecord, use it, it will become the first
             if ~isempty(init_x)
@@ -84,6 +88,9 @@ classdef CMAES_simple < handle
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used.
             if ~isfield(options, "init_sigma"), options.init_sigma = 3;end
+            if ~isfield(options, "Aupdate_freq"), options.Aupdate_freq = 10; end
+            obj.Aupdate_freq = options.Aupdate_freq;
+            obj.update_crit = obj.lambda * obj.Aupdate_freq;% / obj.c1 / obj.N ;
             obj.sigma = options.init_sigma; 
             obj.istep = -1;
             obj.opts = options;
