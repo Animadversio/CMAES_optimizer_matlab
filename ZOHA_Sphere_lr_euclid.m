@@ -70,8 +70,8 @@ classdef ZOHA_Sphere_lr_euclid < handle
             self.rankweight = opts.rankweight; % Switch between using raw score as weight VS use rank weight as score
             self.rankbasis = opts.rankbasis; % whether include basis in the ranking comparison.
             self.mulist = []; % do initialize use the functio lr_schedule
-            fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f-%.3f\n Learning rate: %.3f\n",...
-               self.dimen, self.B, self.mu_init, self.mu_final, self.lr)
+            fprintf("\nSpherical Space dimension: %d, Population size: %d, Optimization Parameters:\n Exploration: %.3f-%.3f\n Learning rate: %.3f\n Sphere Radius: %.3f\n",...
+               self.dimen, self.B, self.mu_init, self.mu_final, self.lr, self.sphere_norm)
             if self.rankweight
             	fprintf("Using rank weight, selection size: %d\n", self.select_cutoff)
             end
