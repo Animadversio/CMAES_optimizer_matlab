@@ -1,6 +1,8 @@
 addpath E:\Github_Projects\Monkey_Visual_Experiment_Data_Processing\DNN
 addpath E:\Github_Projects\Monkey_Visual_Experiment_Data_Processing\utils
 addpath geomtry_util\
+addpath D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN
+addpath D:\Github\Monkey_Visual_Experiment_Data_Processing\utils
 BGAN = torchBigGAN("biggan-deep-256");
 %% across class evolution
 onehot = zeros(1,1000);onehot(460) = 1;
@@ -20,7 +22,7 @@ matimg = permute((matimg + 1) / 2.0,[3,4,2,1]);
 figure;montage(matimg)
 %%
 EmbedVects_mat = BGAN.get_embedding();
-rd_coord = run_umap(EmbedVects_mat','metric',"correlation");
+% rd_coord = run_umap(EmbedVects_mat','metric',"correlation");
 %% statistics about the embedding center
 Embed_norm = sqrt(sum(EmbedVects_mat.^2,1));
 L2distmat = pdist(EmbedVects_mat','euclidean');
@@ -143,7 +145,7 @@ norm_all = sqrt(sum(codes_all.^2,2));
 %%
 
 
-%%
+%% Optimization in the class space. 
 % Optimizer = CMAES_simple(128, [], struct('init_sigma', 0.03)); %, struct("popsize", 40));
 % init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(41,128)];
 options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
@@ -227,7 +229,7 @@ for iGen = 1:n_gen
     hold on
     subplot(2,2,2)
     cla
-    meanPic  = BGAN.visualize_latent([zeros(size(genes(1, :))),genes(mxidx, :)]);
+    meanPic  = BGAN.visualize_latent([zeros(size(genes(1, :))),mean(genes,1)]);
     imagesc(meanPic);
     axis image off
     subplot(2,2,4)
