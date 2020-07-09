@@ -147,10 +147,10 @@ norm_all = sqrt(sum(codes_all.^2,2));
 % Optimizer = CMAES_simple(128, [], struct('init_sigma', 0.03)); %, struct("popsize", 40));
 % init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(41,128)];
 options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
-        "sphere_norm", 0.75, "lr",1.5, "mu_init", 40, "mu_final", 15, "indegree", true);
+        "sphere_norm", 0.75, "lr",1.5, "mu_init", 50, "mu_final", 12, "indegree", true);
 Optimizer = ZOHA_Sphere_lr_euclid(128, options);
 Optimizer.lr_schedule(50, "inv");
-init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(41,128)];
+init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(40,128)];
 unit = {"fc8",2};
 % init_genes =  0.06*randn(40, 256);
 n_gen = 50;nsr = 0.0;Visualize = true;
