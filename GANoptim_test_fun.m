@@ -1,13 +1,26 @@
-function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id] = GANoptim_test_fun(unit, n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path)
-%fign = [];
-% my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
-Visualize = false;
+function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] = GANoptim_test_fun(unit, ...
+    n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path)
+% Wrapped up function for testing Optimizer performance in matlab.  
+% Require global variable net (target CNN) and G the generator equiped with
+% G.visualize(.) function
+% Parameters: 
+%    Unit: a cell array of target unit. E.g. {"fc8", 10} or {"conv4", 11, 101}
+%    n_gen: how many steps / generations to go
+%    Optimizer: 
+%    nsr:  noise signal ratio. 0.0 is no noise 1.0 then the noise std is as
+%       large as signal amplitude
+%    fign: figure number to plot into or []. 
+%    my_final_path: path to write data and figure to e.g. exp per layer
+%       will be written in it. 
+%       my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
+Visualize = true;
 SaveImg = false;   
 SaveData = true; 
 scatclr = "blue"; % color of scatter plot
 global G net
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);
+if Visualize
 if ~isempty(fign)
     h = figure(fign);
     h.Position = [210         276        1201         645];
@@ -19,27 +32,34 @@ end
 annotation(h,'textbox',...
     [0.485 0.467 0.154 0.50],'String',split(printOptionStr(options),','),...
     'FontSize',14,'FitBoxToText','on','EdgeColor','none')
-
-my_layer = unit{1} ; 
-iChan = unit{2} ; 
+else
+h = [];
+end
+my_layer = unit{1}; 
+iChan = unit{2}; 
 if contains(my_layer,"fc")
-	t_unit = 1 ;
+	t_unit = 1;
 else
 	t_unit = unit{3};
 end
+% get activation size
+pic_size = net.Layers(1).InputSize;
+if length(t_unit) == 1
+act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
+[nrows,ncols,nchans] = size(act1) ;
+[i,j] = ind2sub( [nrows ncols], t_unit ) ;
+else
+i = t_unit(1); j = t_unit(2);
+end
 if SaveData || SaveImg || Visualize
-exp_dir = fullfile(my_final_path, sprintf('%s_%d_%d',my_layer, iChan, t_unit) );
+exp_dir = fullfile(my_final_path, sprintf('%s_%d_(%d,%d)',my_layer, iChan, i, j) );
 if ~exist(exp_dir,'dir')
     mkdir(exp_dir)
 end
 fprintf(exp_dir)
 end
 fprintf(printOptionStr(options))
-% get activation size
-pic_size = net.Layers(1).InputSize;
-act1 = activations(net,rand(pic_size),my_layer,'OutputAs','Channels');
-[nrows,ncols,nchans] = size(act1) ;
-[i,j] = ind2sub( [nrows ncols], t_unit ) ;
+
 %    evolutions
 genes = init_genes; 
 codes_all = [];
@@ -122,7 +142,13 @@ if SaveData % write the parametes strings to file.
     fprintf(fid, printOptionStr(options));
     fprintf("\n");
     fclose(fid);
-    save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
+    scores_fin = scores_all(generations==n_gen,:);
+    codes_fin = codes_all(generations==n_gen,:);
+    save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", ...
+        class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_fin","codes_fin")
+%     save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
 end
+if Visualize
 saveas(h, fullfile(exp_dir, sprintf("Evol_trace_%s%s_%s_tr%04d.png", class(Optimizer), param_lab, num2str(nsr), exp_id)))
+end
 end
