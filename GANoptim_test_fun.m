@@ -13,16 +13,18 @@ function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] 
 %    my_final_path: path to write data and figure to e.g. exp per layer
 %       will be written in it. 
 %       my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
-Visualize = true;
-SaveImg = false;   
-SaveData = true; 
+Visualize = false;
+Realtime = false; % true, plot the mean image max image scores and norms at each generation; false, only plot final generation
+Holdon = false;
+SaveImg = false; % save the mean image for each generation
+SaveData = false; % save the code and scores for the last generation
 scatclr = "blue"; % color of scatter plot
 global G net
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);
 if Visualize
 if ~isempty(fign)
-    h = figure(fign);
+    h = figure(fign); if ~Holdon, clf(fign); end
     h.Position = [210         276        1201         645];
 else
     h = figure();
@@ -57,6 +59,8 @@ if ~exist(exp_dir,'dir')
     mkdir(exp_dir)
 end
 fprintf(exp_dir)
+else
+exp_dir = "";
 end
 fprintf(printOptionStr(options))
 
@@ -86,46 +90,45 @@ for iGen = 1:n_gen
     % pass that unit's activations into CMAES_simple
     % save the new codes as 'genes'
     [genes_new,tids] = Optimizer.doScoring(genes, act_unit_noise, true, struct());
-    if Visualize
-    set(0,"CurrentFigure",h)
-    % plot firing rate as it goes
-    subplot(2,2,1)
-    mean_activation(iGen) = mean(act_unit) ;
-    scatter(iGen*ones(1,length(act_unit)),act_unit,16,...
-        'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
-        'MarkerFaceAlpha',.2,'MarkerEdgeAlpha',.2)
-    plot(iGen, mean(act_unit) ,'r.','markersize',20)
-    xlim([0, n_gen])
-    ylabel("scores")
-    xlabel("generations")
-    hold on
-    subplot(2,2,3)
-    code_norms = sqrt(sum(genes.^2, 2));
-    scatter(iGen*ones(1,length(code_norms)),code_norms,16,...
-        'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
-        'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4)
-    plot(iGen, mean(code_norms) ,'r.','markersize',20)
-    xlim([0, n_gen])
-    ylabel("code norm")
-    xlabel("generations")
-    hold on
-    subplot(2,2,2)
-    cla
-    meanPic  = G.visualize(mean(genes));
-    imagesc(meanPic);
-    axis image off
-    subplot(2,2,4)
-    cla
-    [mxscore, mxidx]= max(act_unit);
-    maxPic  = G.visualize(genes(mxidx, :));
-    imagesc(maxPic);
-    if mxidx == 1
-        title(sprintf("basis %s",num2str(mxscore)))
-    else
-        title(num2str(mxscore))
-    end
-    axis image off
-    drawnow
+    if Visualize && Realtime% plot firing rate as it goes
+        set(0,"CurrentFigure",h)
+        subplot(2,2,1)
+        mean_activation(iGen) = mean(act_unit) ;
+        scatter(iGen*ones(1,length(act_unit)),act_unit,16,...
+            'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
+            'MarkerFaceAlpha',.2,'MarkerEdgeAlpha',.2)
+        plot(iGen, mean(act_unit) ,'r.','markersize',20)
+        xlim([0, n_gen])
+        ylabel("scores")
+        xlabel("generations")
+        hold on
+        subplot(2,2,3)
+        code_norms = sqrt(sum(genes.^2, 2));
+        scatter(iGen*ones(1,length(code_norms)),code_norms,16,...
+            'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
+            'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4)
+        plot(iGen, mean(code_norms) ,'r.','markersize',20)
+        xlim([0, n_gen])
+        ylabel("code norm")
+        xlabel("generations")
+        hold on
+        subplot(2,2,2)
+        cla
+        meanPic  = G.visualize(mean(genes,1));
+        imagesc(meanPic);
+        axis image off
+        subplot(2,2,4)
+        cla
+        [mxscore, mxidx]= max(act_unit);
+        maxPic  = G.visualize(genes(mxidx, :));
+        imagesc(maxPic);
+        if mxidx == 1
+            title(sprintf("basis %s",num2str(mxscore)))
+        else
+            title(num2str(mxscore))
+        end
+        axis image off
+        drawnow
 	end
 	if SaveImg
         image_name = sprintf('%s_%03d_%02d_%02d_%02d_%02d.jpg',my_layer,iChan,t_unit,nrows,ncols,iGen) ;
@@ -135,7 +138,44 @@ for iGen = 1:n_gen
     genes = genes_new;
 end % of iGen
 norm_all = sqrt(sum(codes_all.^2,2));
-%
+
+if Visualize && (~Realtime) % post hoc plotting if Realtime is switched off.
+set(0,"CurrentFigure",h)
+subplot(2,2,1);hold on 
+scatter(generations,scores_all,16,...
+    'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
+    'MarkerFaceAlpha',.2,'MarkerEdgeAlpha',.2)
+plot(1:n_gen, mean_activation ,'r.','markersize',20)
+xlim([0, n_gen]);ylabel("scores");xlabel("generations")
+
+subplot(2,2,3);
+% % yyaxis left
+scatter(generations,norm_all,16,...
+    'MarkerFaceColor',scatclr,'MarkerEdgeColor',scatclr,...
+    'MarkerFaceAlpha',.4,'MarkerEdgeAlpha',.4);hold on 
+plot(1:n_gen, arrayfun(@(igen) mean(norm_all(generations==igen)), 1:n_gen),'r.','markersize',20)
+xlim([0, n_gen]);ylabel("code norm");xlabel("generations")
+% % yyaxis right
+% plot(1:n_gen, Optimizer.mulist(1:n_gen) / pi * 180 * sqrt(Optimizer.dimen))
+% ylabel("angular mu")
+subplot(2,2,2)
+meanPic  = G.visualize(mean(genes));
+imagesc(meanPic);
+axis image off
+subplot(2,2,4)
+[mxscore, mxidx]= max(act_unit);
+maxPic  = G.visualize(genes(mxidx, :));
+imagesc(maxPic);
+axis image off
+if mxidx == 1
+    title(sprintf("basis %s",num2str(mxscore)))
+else
+    title(num2str(mxscore))
+end
+% drawnow
+pause(0.5)
+end
+
 exp_id = randi(9999,1);
 if SaveData % write the parametes strings to file.
     fid = fopen(fullfile(exp_dir, sprintf('parameter_%s_%s_tr%04d.txt', class(Optimizer), num2str(nsr), exp_id)), 'wt');
@@ -145,7 +185,7 @@ if SaveData % write the parametes strings to file.
     scores_fin = scores_all(generations==n_gen,:);
     codes_fin = codes_all(generations==n_gen,:);
     save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", ...
-        class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_fin","codes_fin")
+        class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_fin","codes_fin") % only save the last part of data. 
 %     save(fullfile(exp_dir, sprintf("Evol_Data_%s%s_%s_tr%04d.mat", class(Optimizer), param_lab, num2str(nsr), exp_id)), "scores_all","codes_all","generations","norm_all")
 end
 if Visualize
