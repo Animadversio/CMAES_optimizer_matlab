@@ -38,8 +38,8 @@ unit = {"fc8",2};
 % Optimizer.lr_schedule(50, "inv");
 % init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(41,128)];
 
-% Optimize in Noise space
-class_id = 2;%374;
+%% Optimize in Noise space
+class_id = 1;%374;
 visualize_fun = @(noise) BGAN.visualize_latent([noise,EmbedVects_mat(:,class_id)'+zeros(size(noise))]);
 % truncnorm = truncate(makedist("Normal"),-2,2);
 init_genes =  [0.7*truncnorm.random(30,128)]; init_genes = [mean(init_genes, 1); init_genes];
@@ -144,8 +144,10 @@ for iGen = 1:n_gen
     genes = genes_new;
 end % of iGen
 norm_all = sqrt(sum(codes_all.^2,2));
-%% Dual space optimization
-n_gen = 20;nsr = 0.0;Visualize = true;
+
+
+%% Dual space optimization Noise and class space
+n_gen = 100;nsr = 0.0;Visualize = true;
 unit = {"fc8",2};
 % Optimization in the class space. 
 % visualize_fun = @(genes) BGAN.visualize_latent([zeros(size(genes)),genes]);
@@ -164,17 +166,20 @@ truncnorm = truncate(makedist("Normal"),-2,2);
 init_genes =  {[0.7*truncnorm.random(31,128)], ...
                [EmbedVects_mat(:,374)' + 0.005*randn(31,128)]};
 Optimizers =  {};
-options = struct("population_size",30, "select_cutoff",15, "maximize",true, "rankweight",true, "rankbasis", true,...
-        "sphere_norm", 7, "lr",1.5, "mu_init", 60, "mu_final", 10, "indegree", true);
-Optimizers{1} = ZOHA_Sphere_lr_euclid(128, options);
-Optimizers{1}.lr_schedule(n_gen, "inv");
+% options = struct("population_size",30, "select_cutoff",15, "maximize",true, "rankweight",true, "rankbasis", true,...
+%         "sphere_norm", 7, "lr",1.5, "mu_init", 60, "mu_final", 10, "indegree", true);
+% Optimizers{1} = ZOHA_Sphere_lr_euclid(128, options);
+% Optimizers{1}.lr_schedule(n_gen, "inv");
+
+Optimizers{1} = CMAES_simple(128, [], struct('init_sigma', 2, "popsize", 31));
 Optimizers{2} = CMAES_simple(128, [], struct('init_sigma', 0.06, "popsize", 31)); %, struct("popsize", 40));
 % init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(41,128)];
 options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
         "sphere_norm", 0.75, "lr",1.5, "mu_init", 50, "mu_final", 12, "indegree", true);
+
 Optimizer = ZOHA_Sphere_lr_euclid(128, options);
 Optimizer.lr_schedule(50, "inv");
-init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(40,128)];
+% init_genes =  [EmbedVects_mat(:,460)' + 0.005*randn(40,128)];
 unit = {"fc8",2};
 % init_genes =  0.06*randn(40, 256);
 n_gen = 50;nsr = 0.0;Visualize = true;
@@ -187,7 +192,7 @@ opt_str = opt_str + printOptionStr(options) + "\n";
 end
 fprintf(opt_str)
 scatclr = 'blue';
-h = figure(9);clf;h.Position = [210         276        1201         645];
+h = figure(10);clf;h.Position = [210         276        1201         645];
 annotation(h,'textbox',...
     [0.485 0.467 0.154 0.50],'String',split(opt_str,','),...
     'FontSize',14,'FitBoxToText','on','EdgeColor','none')
