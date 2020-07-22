@@ -37,7 +37,7 @@ classdef CMAES_ReducDim < handle
     
     methods
         
-        function obj = CMAES_ReducDim(space_dimen, init_x, subspac_d) 
+        function obj = CMAES_ReducDim(space_dimen, init_x, subspac_d, options) 
             % 2nd arg should be [] if we do not use init_x parameter. 
             % if we want to tune this algorithm, we may need to send in a
             % structure containing some initial parameters? like `sigma`
@@ -77,7 +77,7 @@ classdef CMAES_ReducDim < handle
             obj.Ainv = eye(obj.N, obj.N);
             obj.eigeneval=0;
             obj.counteval=0;
-            obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
+%             obj.update_crit = obj.lambda / obj.c1 / obj.N / 10;
             
             % if init_x is set in TrialRecord, use it, it will become the first
             if ~isempty(init_x)
@@ -88,10 +88,13 @@ classdef CMAES_ReducDim < handle
             % xmean in 2nd generation
             obj.xmean = zeros(1, obj.N); % Not used.
             
-            obj.sigma = 27;
-            
+            if ~isfield(options, "init_sigma"), options.init_sigma = 3;end
+            if ~isfield(options, "Aupdate_freq"), options.Aupdate_freq = 10; end
+            obj.Aupdate_freq = options.Aupdate_freq;
+            obj.update_crit = obj.lambda * obj.Aupdate_freq;% / obj.c1 / obj.N ;
+            obj.sigma = options.init_sigma; 
             obj.istep = -1;
-            obj.opts.init_sigma = obj.sigma;
+            obj.opts = options;
         end % of initialization
         
         function basis = getBasis(obj, basis_opt, varargin)
@@ -115,7 +118,7 @@ classdef CMAES_ReducDim < handle
                     end
                 end
             else
-                assert(isa(basis_opt,'double'), 'Unrecoginized data type for basis option.')
+                assert(isa(basis_opt,'double') || isa(basis_opt,'single'), 'Unrecoginized data type for basis option.')
                 basis = basis_opt;
             end
             if all(size(basis) == [obj.N, obj.code_len])

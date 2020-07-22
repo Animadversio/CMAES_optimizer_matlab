@@ -5,6 +5,7 @@ pic_size = net.Layers(1).InputSize;
 % declare your generator
 %GANpath = "D:\Github\Monkey_Visual_Experiment_Data_Processing\DNN";
 GANpath = "C:\Users\ponce\Documents\GitHub\Monkey_Visual_Experiment_Data_Processing\DNN";
+addpath 'E:\Github_Projects\Monkey_Visual_Experiment_Data_Processing\DNN'
 addpath(GANpath)
 G = FC6Generator('matlabGANfc6.mat');
 my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Project_Optimizers';
@@ -39,7 +40,7 @@ my_final_path =  '\\storage1.ris.wustl.edu\crponce\Active\Data-Computational\Pro
 % Optimizer = CMAES_ReducDim(4096, [], 50);
 % Optimizer.getBasis("rand");
 
-%Optimizer =  CMAES_simple(4096, [], struct());
+% Optimizer =  CMAES_simple(4096, [], struct());
 
 options = struct("population_size",40, "select_cutoff",20, "maximize",true, "rankweight",true, "rankbasis", true,...
             "sphere_norm", 300, "lr",1.5, "mu_init", 40, "mu_final", 7.33, "indegree", true);
@@ -49,6 +50,7 @@ Optimizer.lr_schedule(100, "exp");
 n_gen = 100 ; % declare your number of generations
 unit = {"fc8", 2}; % Select target unit 
 % unit = {"conv2", 2, 100};
+unit = {"conv5", 10, 91};scatclr="b";
 Visualize = true;
 SaveImg = false;   
 SaveData = false; 
@@ -110,6 +112,7 @@ for iGen = 1:n_gen
     pics = G.visualize(genes);
     % feed them into net
     pics = imresize( pics , [pic_size(1) pic_size(2)]);
+    pics = repmat(mean(pics,3),1,1,3);
     % get activations
     act1 = activations(net,pics,my_layer,'OutputAs','Channels');
     act_unit = squeeze( act1(i,j,iChan,:) ) ;
@@ -150,13 +153,15 @@ for iGen = 1:n_gen
     subplot(2,2,2)
     cla
     meanPic  = G.visualize(mean(genes));
-    imagesc(meanPic);
+    meanPic = repmat(mean(meanPic,3),1,1,3);
+    imshow(meanPic/255);
     axis image off
     subplot(2,2,4)
     cla
     [mxscore, mxidx]= max(act_unit);
     maxPic  = G.visualize(genes(mxidx, :));
-    imagesc(maxPic);
+    maxPic = repmat(mean(maxPic,3),1,1,3);
+    imshow(maxPic/255);
     if mxidx == 1
         title(sprintf("basis %s",num2str(mxscore)))
     else
