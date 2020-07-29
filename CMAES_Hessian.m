@@ -98,14 +98,16 @@ classdef CMAES_Hessian < handle
             obj.opts = options;
         end % of initialization
         
-        function basis = getHessian(obj, eigvects, eigvals, cutoff, mode)
+        function getHessian(obj, eigvects, eigvals, cutoff, mode)
             if isempty(mode)
                 mode = "1/4";
             end
             obj.cutoff = cutoff;
             obj.eigvals = eigvals(1:cutoff);
             obj.eigvects = eigvects(:,1:cutoff);
-            if mode =="1/4"
+            if isnumeric(mode)
+            scaling = 1 ./ (obj.eigvals).^(mode);
+            elseif mode =="1/4"
             scaling = 1 ./ (obj.eigvals).^(1/4);
             elseif mode =="1/5"
             scaling = 1 ./ (obj.eigvals).^(1/5);
