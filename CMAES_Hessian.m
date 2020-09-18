@@ -100,26 +100,27 @@ classdef CMAES_Hessian < handle
         
         function getHessian(obj, eigvects, eigvals, cutoff, mode)
             if isempty(mode)
-                mode = "1/4";
+                mode = 1/4;
             end
             obj.cutoff = cutoff;
             obj.eigvals = eigvals(1:cutoff);
             obj.eigvects = eigvects(:,1:cutoff);
             if isnumeric(mode)
-            scaling = 1 ./ (obj.eigvals).^(mode);
+            scaling = (obj.eigvals).^(-mode);
             elseif mode =="1/4"
-            scaling = 1 ./ (obj.eigvals).^(1/4);
+            scaling = (obj.eigvals).^(-1/4);
             elseif mode =="1/5"
-            scaling = 1 ./ (obj.eigvals).^(1/5);
+            scaling = (obj.eigvals).^(-1/5);
             elseif mode == "1/3"
-            scaling = 1 ./ (obj.eigvals).^(1/3);
+            scaling = (obj.eigvals).^(-1/3);
             elseif mode == "1/2"
-            scaling = 1 ./ (obj.eigvals).^(1/2);
+            scaling = (obj.eigvals).^(-1/2);
             elseif mode == "1"
             scaling = ones(size(obj.eigvals));
             end
-            scaling = scaling / max(scaling);
+            % scaling = scaling / max(scaling); % disabled Sep17
             obj.A = reshape(scaling,[],1).* obj.eigvects';
+            obj.Ainv = (1 ./ reshape(scaling,1,[])) .* obj.eigvects;
             obj.scaling = scaling;
             obj.opts.mode = mode;
             obj.opts.scaling_min = min(scaling);
