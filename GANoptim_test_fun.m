@@ -14,7 +14,7 @@ function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] 
 %       will be written in it. 
 %       my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
 Visualize = true;
-Realtime = false; % true, plot the mean image max image scores and norms at each generation; false, only plot final generation
+Realtime = true; % true, plot the mean image max image scores and norms at each generation; false, only plot final generation
 Holdon = false;
 SaveImg = false; % save the mean image for each generation
 SaveData = true; % save the code and scores for the last generation
