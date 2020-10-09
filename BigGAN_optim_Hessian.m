@@ -12,6 +12,7 @@ data = py.numpy.load("E:\Cluster_Backup\BigGANH\summary\H_avg_1000cls.npz");
 % eigvals = data.get("eigv_avg").double;
 % eigvals = eigvals(end:-1:1);
 % eigvect = eigvect(:,end:-1:1);
+%%
 eigvals = data.get("eigvals_clas_avg").double; % each column is an eigen vector. 
 eigvect = data.get("eigvects_clas_avg").double;
 eigvals = eigvals(end:-1:1);
@@ -24,14 +25,15 @@ eigvect_fc6 = eigvect_fc6(:,end:-1:1);
 eigvals_fc6 = eigvals_fc6(end:-1:1);
 %%
 G = torchBigGAN();
-%%
+%%%
 G = G.select_space("class");
+%%
 Optimizer = CMAES_simple(128, [], struct("init_sigma",0.06));
 n_gen = 100;unit = {"fc6",2};param_lab="CMA_ctrl";fign=[];nsr=0;init_genes = 0.04 * randn(1,128);
 [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] = GANoptim_test_fun(unit, ...
     n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path);
-%
-Optimizer = CMAES_Hessian(128, 128, [], struct("init_sigma",0.12));
+%%
+Optimizer = CMAES_Hessian(128, 128, [], struct("init_sigma",0.2));
 Optimizer.getHessian(eigvect, eigvals, 128, "1/3"); 
 n_gen = 100;unit = {"fc6",2};param_lab="CMA_Hess1_3";fign=[];nsr=0;init_genes = 0.04 * randn(1,128);
 [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] = GANoptim_test_fun(unit, ...
