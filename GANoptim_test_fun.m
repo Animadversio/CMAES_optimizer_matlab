@@ -1,7 +1,7 @@
 function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] = GANoptim_test_fun(unit, ...
     n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path)
 % Wrapped up function for testing Optimizer performance in matlab.  
-% Require global variable net (target CNN) and G the generator equiped with
+% Require global variable `net` (target CNN) and `G` the generator equiped with
 % G.visualize(.) function
 % Parameters: 
 %    Unit: a cell array of target unit. E.g. {"fc8", 10} or {"conv4", 11, 101}
