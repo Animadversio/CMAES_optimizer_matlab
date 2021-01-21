@@ -109,13 +109,13 @@ classdef CMAES_simple < handle
             end
             % TODO: maybe print the sorted score?
             % disp(sorted_score')
-            fprintf("max score %.3f, mean %.3f (std %.3f)",...
-                max(sorted_score),mean(sorted_score),std(sorted_score) )
+%             fprintf("max score %.3f, mean %.3f (std %.3f)",...
+%                 max(sorted_score),mean(sorted_score),std(sorted_score) )
             
             if obj.istep == -1 % if first step
-                fprintf('is first gen\n');
+%                 fprintf('is first gen\n');
                 % Population Initialization: if without initialization, the first obj.xmean is evaluated from weighted average all the natural images
-                if isempty(obj.init_x)
+                if isempty(obj.init_x) ||  size(obj.init_x, 1)~=1
                     if obj.mu<=length(scores)
                         obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
                     else % if ever the obj.mu (selected population size) larger than the initial population size (init_population is 1 ?)
@@ -129,7 +129,7 @@ classdef CMAES_simple < handle
                 
             else % if not first step
                 
-                fprintf('not first gen\n');
+%                 fprintf('not first gen\n');
 %                 xold = obj.xmean;
                 % Weighted recombination, move the mean value
                 obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);

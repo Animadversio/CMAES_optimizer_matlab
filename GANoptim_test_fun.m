@@ -1,7 +1,7 @@
 function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] = GANoptim_test_fun(unit, ...
     n_gen, Optimizer, init_genes, nsr, fign, param_lab, my_final_path)
 % Wrapped up function for testing Optimizer performance in matlab.  
-% Require global variable net (target CNN) and G the generator equiped with
+% Require global variable `net` (target CNN) and `G` the generator equiped with
 % G.visualize(.) function
 % Parameters: 
 %    Unit: a cell array of target unit. E.g. {"fc8", 10} or {"conv4", 11, 101}
@@ -13,15 +13,16 @@ function [scores_all,codes_all,generations,norm_all,Optimizer,h,exp_id,exp_dir] 
 %    my_final_path: path to write data and figure to e.g. exp per layer
 %       will be written in it. 
 %       my_final_path = "C:\Users\binxu\OneDrive - Washington University in St. Louis\Optimizer_Tuning\lrsched_test";
-Visualize = false;
-Realtime = false; % true, plot the mean image max image scores and norms at each generation; false, only plot final generation
+Visualize = true;
+Realtime = true; % true, plot the mean image max image scores and norms at each generation; false, only plot final generation
 Holdon = false;
 SaveImg = false; % save the mean image for each generation
-SaveData = false; % save the code and scores for the last generation
+SaveData = true; % save the code and scores for the last generation
 scatclr = "blue"; % color of scatter plot
 global G net
 options = Optimizer.opts; % updates the default parameters
 options.Optimizer = class(Optimizer);
+options.GANspace = class(G);
 if Visualize
 if ~isempty(fign)
     h = figure(fign); if ~Holdon, clf(fign); end
@@ -76,6 +77,9 @@ for iGen = 1:n_gen
     pics = G.visualize(genes);
     % feed them into net
     pics = imresize( pics , [pic_size(1) pic_size(2)]);
+    if class(G) == "torchBigGAN"
+        pics = pics * 255.0;
+    end
     % get activations
     act1 = activations(net,pics,my_layer,'OutputAs','Channels');
     act_unit = squeeze( act1(i,j,iChan,:) ) ;

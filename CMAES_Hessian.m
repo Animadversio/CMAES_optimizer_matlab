@@ -98,23 +98,33 @@ classdef CMAES_Hessian < handle
             obj.opts = options;
         end % of initialization
         
-        function basis = getHessian(obj, eigvects, eigvals, cutoff, mode)
+        function getHessian(obj, eigvects, eigvals, cutoff, mode)
             if isempty(mode)
-                mode = "1/4";
+                mode = 1/4;
             end
             obj.cutoff = cutoff;
             obj.eigvals = eigvals(1:cutoff);
             obj.eigvects = eigvects(:,1:cutoff);
-            if mode =="1/4"
-            scaling = 1 ./ (obj.eigvals).^(1/4);
+            if isnumeric(mode)
+            scaling = (obj.eigvals).^(-mode);
+            elseif mode =="1/4"
+            scaling = (obj.eigvals).^(-1/4);
+            elseif mode =="1/5"
+            scaling = (obj.eigvals).^(-1/5);
             elseif mode == "1/3"
-            scaling = 1 ./ (obj.eigvals).^(1/3);
+            scaling = (obj.eigvals).^(-1/3);
             elseif mode == "1/2"
-            scaling = 1 ./ (obj.eigvals).^(1/2);
+            scaling = (obj.eigvals).^(-1/2);
+            elseif mode == "1"
+            scaling = ones(size(obj.eigvals));
             end
-            scaling = scaling / max(scaling);
+            % scaling = scaling / max(scaling); % disabled Sep17
             obj.A = reshape(scaling,[],1).* obj.eigvects';
+            obj.Ainv = (1 ./ reshape(scaling,1,[])) .* obj.eigvects;
             obj.scaling = scaling;
+            obj.opts.mode = mode;
+            obj.opts.scaling_min = min(scaling);
+            obj.opts.scaling_mean = mean(scaling);
             % basis could be a vector set or a path to some mat file or
             % random direction
 %             if isstring(basis_opt) || ischar(basis_opt)
@@ -150,7 +160,7 @@ classdef CMAES_Hessian < handle
         
         function [new_samples, new_ids, TrialRecord] =  doScoring(obj,codes,scores,maximize,TrialRecord)
             obj.codes = codes;
-%             obj.codes = codes * obj.basis';
+            % obj.codes = codes * obj.basis';
             % Sort by fitness and compute weighted mean into xmean
             if ~maximize
                 [sorted_score, code_sort_index] = sort(scores);  % add - operator it will do maximization.
@@ -158,7 +168,7 @@ classdef CMAES_Hessian < handle
                 [sorted_score, code_sort_index] = sort(scores, 'descend');
             end
             % TODO: maybe print the sorted score?
-%             disp(sorted_score')
+            % disp(sorted_score')
             fprintf("scores mean %.1f max %.1f min %.1f\n",mean(scores),max(scores),min(scores))
             
             if obj.istep == -1 % if first step
@@ -178,7 +188,7 @@ classdef CMAES_Hessian < handle
             else % if not first step
                 
                 fprintf('not first gen\n');
-%                 xold = obj.xmean;
+                % xold = obj.xmean;
                 % Weighted recombination, move the mean value
                 obj.xmean = obj.weights * obj.codes(code_sort_index(1:obj.mu), :);
                 
@@ -204,7 +214,7 @@ classdef CMAES_Hessian < handle
                 % Stretch the guassian hyperspher with D and transform the
                 % ellipsoid by B mat linear transform between coordinates
                 new_ids = [new_ids, sprintf("gen%03d_%06d",obj.istep+1, obj.counteval)];
-               
+                
                 % FIXME obj.A little inconsistent with the naming at line 173/175/305/307 esp. for gen000 code
                 % assign id to newly generated images. These will be used as file names at 2nd round
                 obj.counteval = obj.counteval + 1;

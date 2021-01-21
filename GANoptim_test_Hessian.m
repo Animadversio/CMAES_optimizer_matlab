@@ -1,4 +1,5 @@
-%% Test Hessian 
+%% Test the idea of using Hessian to facilitate Black Box Optimization
+%  Conditioning the exploration by the Hessian eigenvalue / eigenvector. 
  
 global G net eigvect eigvals
 net = alexnet;
